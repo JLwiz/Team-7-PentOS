@@ -30,6 +30,21 @@ static void busy_wait (int64_t loops);
 static void real_time_sleep (int64_t num, int32_t denom);
 static void real_time_delay (int64_t num, int32_t denom);
 
+
+/* List of processes in sleep state, that is, processes
+   that are asleep. */
+static struct list sleeper_list;
+
+bool
+list_less_func_2 (const struct list_elem *a,
+                             const struct list_elem *b,
+                             void *aux) 
+{
+  struct thread *a_ticks = list_entry(a, struct thread, sleeper_elem);
+  struct thread *b_ticks = list_entry(b, struct thread, sleeper_elem);
+  return b_ticks->ticks_left < a_ticks->ticks_left;
+}
+
 /* Sets up the timer to interrupt TIMER_FREQ times per second,
    and registers the corresponding interrupt. */
 void
@@ -37,6 +52,7 @@ timer_init (void)
 {
   pit_configure_channel (0, 2, TIMER_FREQ);
   intr_register_ext (0x20, timer_interrupt, "8254 Timer");
+  list_init(&sleeper_list);
 }
 
 /* Calibrates loops_per_tick, used to implement brief delays. */
@@ -92,8 +108,52 @@ timer_sleep (int64_t ticks)
   int64_t start = timer_ticks ();
 
   ASSERT (intr_get_level () == INTR_ON);
+
+  struct thread *cur = thread_current ();
+  enum intr_level old_level;
+  old_level = intr_disable();
+  // Setting current thread (which is active) to blocked
+  cur->ticks_left = ticks;
+
+  list_insert_ordered(&sleeper_list, &cur->sleeper_elem, &list_less_func_2, NULL);
+  // Enable when being checked.
+  // intr_enable ();
+
   while (timer_elapsed (start) < ticks) 
-    thread_yield ();
+  {
+    struct list_elem *e;
+    for (e = list_begin (&sleeper_list); e != list_end (&sleeper_list);
+        e = list_next (e))
+    {
+      //maybe block here
+      struct thread *f = list_entry (e, struct thread, sleeper_elem);
+      //maybe unblock here
+      f->ticks_left = f->ticks_left - 1; // as a placeholder (mod size of list or counter)
+      if (f->ticks_left <= 0) 
+      {
+        //readylist, m,aybe block
+        struct list *ready_list = get_ready_list();
+        list_push_back (ready_list, &f->sleeper_elem);
+        f->status = THREAD_READY;
+        schedule();
+
+        //for sure block
+        list_pop_front(&sleeper_list);
+        //Unblock
+      }
+      else 
+      {
+        break;
+      }
+    }
+    // intr_set_level(old_level);
+  }
+   // break; // thread_yield ();
+  //for this tick:
+    //Get the current thread
+    //Add to the sleeping list, and assoicate the thread with the amount of ticks it needs to wait
+    //then go thru the sleeping queue, if any of the threads will wake up before they are first in the ready queue, add them to the ready queue
+    //Sleeping list needs tid, and ticks
 }
 
 /* Sleeps for approximately MS milliseconds.  Interrupts must be
@@ -165,7 +225,7 @@ timer_print_stats (void)
 {
   printf ("Timer: %"PRId64" ticks\n", timer_ticks ());
 }
-
+
 /* Timer interrupt handler. */
 static void
 timer_interrupt (struct intr_frame *args UNUSED)
@@ -244,3 +304,5 @@ real_time_delay (int64_t num, int32_t denom)
   ASSERT (denom % 1000 == 0);
   busy_wait (loops_per_tick * num / 1000 * TIMER_FREQ / (denom / 1000)); 
 }
+
+
