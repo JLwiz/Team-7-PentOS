@@ -81,6 +81,12 @@ struct list* get_ready_list(void)
 {
   return &ready_list;
 }
+
+
+struct list* get_sleeper_list(void) 
+{
+  return &sleeper_list;
+}
 /* Initializes the threading system by transforming the code
    that's currently running into a thread.  This can't work in
    general and it is possible in this case only because loader.S

@@ -33,7 +33,7 @@ static void real_time_delay (int64_t num, int32_t denom);
 
 /* List of processes in sleep state, that is, processes
    that are asleep. */
-static struct list sleeper_list;
+// static struct list sleeper_list;
 
 bool
 list_less_func_2 (const struct list_elem *a,
@@ -52,7 +52,6 @@ timer_init (void)
 {
   pit_configure_channel (0, 2, TIMER_FREQ);
   intr_register_ext (0x20, timer_interrupt, "8254 Timer");
-  list_init(&sleeper_list);
 }
 
 /* Calibrates loops_per_tick, used to implement brief delays. */
@@ -108,52 +107,17 @@ timer_sleep (int64_t ticks)
   int64_t start = timer_ticks ();
 
   ASSERT (intr_get_level () == INTR_ON);
-
+  // msg("Work1");
   struct thread *cur = thread_current ();
   enum intr_level old_level;
   old_level = intr_disable();
   // Setting current thread (which is active) to blocked
-  cur->ticks_left = ticks;
-
-  list_insert_ordered(&sleeper_list, &cur->sleeper_elem, &list_less_func_2, NULL);
-  // Enable when being checked.
-  // intr_enable ();
-
-  while (timer_elapsed (start) < ticks) 
-  {
-    struct list_elem *e;
-    for (e = list_begin (&sleeper_list); e != list_end (&sleeper_list);
-        e = list_next (e))
-    {
-      //maybe block here
-      struct thread *f = list_entry (e, struct thread, sleeper_elem);
-      //maybe unblock here
-      f->ticks_left = f->ticks_left - 1; // as a placeholder (mod size of list or counter)
-      if (f->ticks_left <= 0) 
-      {
-        //readylist, m,aybe block
-        struct list *ready_list = get_ready_list();
-        list_push_back (ready_list, &f->sleeper_elem);
-        f->status = THREAD_READY;
-        schedule();
-
-        //for sure block
-        list_pop_front(&sleeper_list);
-        //Unblock
-      }
-      else 
-      {
-        break;
-      }
-    }
-    // intr_set_level(old_level);
-  }
-   // break; // thread_yield ();
-  //for this tick:
-    //Get the current thread
-    //Add to the sleeping list, and assoicate the thread with the amount of ticks it needs to wait
-    //then go thru the sleeping queue, if any of the threads will wake up before they are first in the ready queue, add them to the ready queue
-    //Sleeping list needs tid, and ticks
+  cur->ticks_left = start + ticks;
+  struct list *sleeper_list = get_sleeper_list();
+  // msg("Work2");
+  list_insert_ordered(sleeper_list, &cur->sleeper_elem, &list_less_func_2, NULL);
+  thread_block();
+  intr_set_level(old_level);
 }
 
 /* Sleeps for approximately MS milliseconds.  Interrupts must be
@@ -231,6 +195,23 @@ static void
 timer_interrupt (struct intr_frame *args UNUSED)
 {
   ticks++;
+  enum intr_level old_level = intr_disable ();
+  struct list_elem *cur_elem;
+  struct list *sleeper_list = get_sleeper_list();
+  cur_elem = list_begin(sleeper_list);
+  struct list_elem *e;
+  for (e = list_begin (sleeper_list); e != list_end (sleeper_list);
+      e = list_next (e))
+  {
+    //msg("Yo Patrick youre 5'9''");
+    struct thread *cur = list_entry (e, struct thread, sleeper_elem);
+    if (cur->ticks_left <= timer_ticks())
+    {
+      thread_unblock(cur);
+      list_remove(e);
+    }
+  }
+  intr_set_level(old_level);
   thread_tick ();
 }
 
