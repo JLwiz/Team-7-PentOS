@@ -29,7 +29,7 @@ static bool too_many_loops (unsigned loops);
 static void busy_wait (int64_t loops);
 static void real_time_sleep (int64_t num, int32_t denom);
 static void real_time_delay (int64_t num, int32_t denom);
-
+bool list_less_func_2 (const struct list_elem *a, const struct list_elem *b, void *aux);
 
 /* List of processes in sleep state, that is, processes
    that are asleep. */
@@ -38,7 +38,7 @@ static void real_time_delay (int64_t num, int32_t denom);
 bool
 list_less_func_2 (const struct list_elem *a,
                              const struct list_elem *b,
-                             void *aux) 
+                             void *aux UNUSED) 
 {
   struct thread *a_ticks = list_entry(a, struct thread, sleeper_elem);
   struct thread *b_ticks = list_entry(b, struct thread, sleeper_elem);
@@ -196,7 +196,6 @@ timer_interrupt (struct intr_frame *args UNUSED)
 {
   ticks++;
   enum intr_level old_level = intr_disable ();
-  struct list_elem *cur_elem;
   struct list *sleeper_list = get_sleeper_list();
   struct list_elem *e;
   for (e = list_begin (sleeper_list); e != list_end (sleeper_list);

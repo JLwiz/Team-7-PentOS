@@ -114,6 +114,7 @@ struct thread
 extern bool thread_mlfqs;
 
 struct list* get_ready_list(void);
+struct list* get_sleeper_list(void);
 
 void thread_init (void);
 void thread_start (void);
