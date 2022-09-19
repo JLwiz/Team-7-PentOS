@@ -42,7 +42,7 @@ list_less_func_2 (const struct list_elem *a,
 {
   struct thread *a_ticks = list_entry(a, struct thread, sleeper_elem);
   struct thread *b_ticks = list_entry(b, struct thread, sleeper_elem);
-  return b_ticks->ticks_left < a_ticks->ticks_left;
+  return b_ticks->ticks_left > a_ticks->ticks_left;
 }
 
 /* Sets up the timer to interrupt TIMER_FREQ times per second,
@@ -198,17 +198,17 @@ timer_interrupt (struct intr_frame *args UNUSED)
   enum intr_level old_level = intr_disable ();
   struct list_elem *cur_elem;
   struct list *sleeper_list = get_sleeper_list();
-  cur_elem = list_begin(sleeper_list);
   struct list_elem *e;
   for (e = list_begin (sleeper_list); e != list_end (sleeper_list);
       e = list_next (e))
   {
-    //msg("Yo Patrick youre 5'9''");
     struct thread *cur = list_entry (e, struct thread, sleeper_elem);
     if (cur->ticks_left <= timer_ticks())
     {
       thread_unblock(cur);
       list_remove(e);
+    } else {
+      break;
     }
   }
   intr_set_level(old_level);
