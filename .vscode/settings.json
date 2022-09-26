@@ -2,5 +2,6 @@
     "files.associations": {
         "timer.h": "c",
         "synch.h": "c"
-    }
+    },
+    "C_Cpp.errorSquiggles": "Disabled"
 }
