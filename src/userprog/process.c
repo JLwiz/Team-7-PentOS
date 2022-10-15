@@ -370,16 +370,21 @@ load (const char *file_name, void (**eip) (void), void **esp)
     goto done;
   }
 
-
-
-  
-  while (f_name != NULL) 
+  char *token = f_name;
+  void *cur_sp = *esp;
+  // need to count the amount of arguements pushed to stack.
+  int argc = 0;
+  while (token != NULL) 
   {
-    //Saving each string token because the address
-    *--esp = (f_name);
-    f_name = strtok_r(NULL, " ", &save_ptr);
-    printf("stack pointer: 0x%02x  token: %s\n", *esp, f_name);
+    cur_sp -= (strlen(token) + 1);
+    // memcpy into the void pntr
+    memcpy(cur_sp, token, strlen(token) + 1);
+    // *--esp = (token);
+    argc++;
+    printf("stack pointer: 0x%02x  token: %s\n", cur_sp, token);
+    token = strtok_r(NULL, " ", &save_ptr);
   }
+  printf("argc: %d\n", argc);
   //push a fake return address
 
 
