@@ -1,6 +1,7 @@
 #include "userprog/syscall.h"
 #include <stdio.h>
 #include <syscall-nr.h>
+#include "devices/input.h"
 #include "threads/interrupt.h"
 #include "threads/thread.h"
 
@@ -25,7 +26,7 @@ syscall_init (void)
 }
 
 void
-syscall_1 (struct intr_frame *f, int syscall_number, void *arg)
+syscall_1 (struct intr_frame *f UNUSED, int syscall_number, void *arg)
 {
   int arg0 = *((int*)arg);
 
@@ -42,7 +43,7 @@ syscall_1 (struct intr_frame *f, int syscall_number, void *arg)
 }
 
 void
-syscall_3 (struct intr_frame *f, int syscall_number, void *args)
+syscall_3 (struct intr_frame *f UNUSED, int syscall_number, void *args)
 {
   int arg0 = *((int*)args);       // Unused for now, replaced with STDIN/STDOUT.
   int arg1 = *((int*)(args + 4));
@@ -50,10 +51,10 @@ syscall_3 (struct intr_frame *f, int syscall_number, void *args)
 
   switch (syscall_number) {
     case SYS_READ:
-      f->eax = read(STDIN_FILENO, (void*) arg1, (unsigned) arg2);
+      f->eax = read(arg0, (void*) arg1, (unsigned) arg2);
       break;
     case SYS_WRITE:
-      f->eax = write(STDOUT_FILENO, (void*) arg1, (unsigned) arg2);
+      f->eax = write(arg0, (void*) arg1, (unsigned) arg2);
       break;
     default:
       printf("Not yet implemented\n");
@@ -76,7 +77,7 @@ syscall_handler (struct intr_frame *f UNUSED)
   }
 
   int syscall_number = *((int*)f->esp);
-  void *args = *((int*)f->esp) + 4;
+  void *args = f->esp += 4;
     
   switch (syscall_number) {
     case SYS_EXIT:
@@ -109,7 +110,7 @@ exit (int status)
 }
 
 int
-read (int fd, void *buffer, unsigned length)
+read (int fd, void *buffer, unsigned length UNUSED)
 {
   /* Invalid File Descriptor */
   if (fd < 0) {
@@ -119,7 +120,7 @@ read (int fd, void *buffer, unsigned length)
 
   /* Null Buffer */
   if (buffer == NULL) {
-    printf("Passed Buffer Is Null\n");
+    printf("Passed A Null Buffer.\n");
     return -1;
   }
 
@@ -127,14 +128,34 @@ read (int fd, void *buffer, unsigned length)
   if (fd == 0) {
     return input_getc();
   }
-  
+
   /* Reading From File */
   printf("Reading from anything but STDIN not yet implemented.\n");
   return -1;
 }
 
-int write (int fd, const void *buffer, unsigned length)
+int
+write (int fd, const void *buffer, unsigned length)
 {
-  printf("Write Method\n");
-  return 0;
+  /* Invalid File Descriptor */
+  if (fd < 0) {
+    printf("Passed Invalid File Descriptor.\n");
+    return -1;
+  }
+
+  /* Null Buffer */
+  if (buffer == NULL) {
+    printf("Passed A Null Buffer.\n");
+    return -1;
+  }
+
+  /* Write To STDOUT */
+  if (fd == 1) {
+    putbuf((char*)buffer, length);
+    return (int) length;
+  }
+
+  /* Writing To File */
+  printf("Writing to anything but STDOUT not yet implemented.\n");
+  return -1;
 }
