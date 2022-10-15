@@ -56,14 +56,17 @@ process_execute (const char *file_name)
 
   /* Create a new thread to execute FILE_NAME. */
 
-  struct thread* thread = thread_current();
-  sema_down(thread->testing_sema);
+  // struct thread* thread = thread_current();
+  // sema_down(thread->testing_sema);
 
   tid = thread_create (fn_copy, PRI_DEFAULT, start_process, fn_copy);
+
+  process_wait(tid);
+
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy);
 
-  sema_up(thread->testing_sema);
+  //sema_up(thread->testing_sema);
   printf("made it here tid\n");
   return tid;
 }
@@ -85,6 +88,9 @@ start_process (void *file_name_)
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
   printf("Entering load\n");
+
+  //tokenization
+
   success = load (file_name, &if_.eip, &if_.esp);
 
 
@@ -120,8 +126,9 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid UNUSED) 
 {
-  while (child_tid->status != THREAD_DYING);
-  return -1;
+  struct thread* child = get_thread(child_tid);
+  while (child->status != THREAD_DYING);
+  return child->status;
 }
 
 /* Free the current process's resources. */
@@ -242,7 +249,9 @@ bool
 load (const char *file_name, void (**eip) (void), void **esp) 
 {
 
-  printf("made it here 1\n");
+
+
+  printf("made it here 1 (load)\n");
   char *fn_copy, *save_ptr;
   struct thread *t = thread_current ();
   struct Elf32_Ehdr ehdr;
@@ -250,23 +259,34 @@ load (const char *file_name, void (**eip) (void), void **esp)
   off_t file_ofs;
   bool success = false;
   int i;
+
+
+  char *f_name = malloc(strlen(file_name) + 1);
+  strlcpy(f_name, file_name, strlen(file_name)+1);
+  char *token = strtok_r(f_name, " ", &save_ptr);
+  printf("token: %s\n", token);
+
+
   /* Allocate and activate page directory. */
   t->pagedir = pagedir_create ();
   if (t->pagedir == NULL) 
     goto done;
   process_activate ();
 
+  
+
+  //EDITED FROM ORIGINAL, FILE_NAME --> TOKEN
   /* Open executable file. */
-  file = filesys_open (file_name);
+  file = filesys_open (token);
   if (file == NULL) 
     {
-      printf ("load: %s: open failed\n", file_name);
+      printf ("load: %s: open failed\n", token);
       goto done; 
     }
 
   /* Read and verify executable header. */
 
-  printf("made it here 2\n");
+  printf("made it here 2(load)\n");
   
   if (file_read (file, &ehdr, sizeof ehdr) != sizeof ehdr
       || memcmp (ehdr.e_ident, "\177ELF\1\1\1", 7)
@@ -352,17 +372,15 @@ load (const char *file_name, void (**eip) (void), void **esp)
 
 
 
-  char *f_name = malloc(strlen(file_name) + 1);
-  strlcpy(f_name, file_name, strlen(file_name)+1);
-  char *token = strtok_r(f_name, " ", &save_ptr);
-  printf("token: %s\n", token);
+  
   while (token != NULL) 
   {
-    *--esp = 5;
+    //Saving each string token because the address
+    *--esp = (token);
     token = strtok_r(NULL, " ", &save_ptr);
-    printf("stack pointer: %02x  token: %s\n", *esp, token);
+    printf("stack pointer: 0x%02x  token: %s\n", *esp, token);
   }
-
+  //push a fake return address
 
 
   /* Start address. */
