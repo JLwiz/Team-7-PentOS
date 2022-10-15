@@ -107,7 +107,10 @@ exit (int status)
 {
   /* Getting current thread */
   struct thread *cur = thread_current();
+  printf("%s: exit(%d)\n", cur->name, status);  /* In Stanford Documentation, not sure if we need. */
   cur->status = status;
+
+  
 
   /* Need to check if current thread is a child of another thread */
 
