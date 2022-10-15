@@ -105,7 +105,12 @@ syscall_handler (struct intr_frame *f UNUSED)
 void
 exit (int status)
 {
-  printf("Exit Method\n");
+  /* Getting current thread */
+  struct thread *cur = thread_current();
+  cur->status = status;
+
+  /* Need to check if current thread is a child of another thread */
+
   thread_exit();
 }
 
