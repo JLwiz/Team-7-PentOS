@@ -399,7 +399,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
   printf("final align: %d\n", alignment_check);
   ASSERT(alignment_check % 4 == 0);
   //push a fake return address
-
+  *esp = cur_sp;
 
   /* Start address. */
   *eip = (void (*) (void)) ehdr.e_entry;
