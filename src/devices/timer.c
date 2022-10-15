@@ -29,6 +29,21 @@ static bool too_many_loops (unsigned loops);
 static void busy_wait (int64_t loops);
 static void real_time_sleep (int64_t num, int32_t denom);
 static void real_time_delay (int64_t num, int32_t denom);
+bool list_less_func_2 (const struct list_elem *a, const struct list_elem *b, void *aux);
+
+/* List of processes in sleep state, that is, processes
+   that are asleep. */
+// static struct list sleeper_list;
+
+bool
+list_less_func_2 (const struct list_elem *a,
+                             const struct list_elem *b,
+                             void *aux UNUSED) 
+{
+  struct thread *a_ticks = list_entry(a, struct thread, sleeper_elem);
+  struct thread *b_ticks = list_entry(b, struct thread, sleeper_elem);
+  return b_ticks->ticks_left > a_ticks->ticks_left;
+}
 
 /* Sets up the timer to interrupt TIMER_FREQ times per second,
    and registers the corresponding interrupt. */
@@ -92,8 +107,17 @@ timer_sleep (int64_t ticks)
   int64_t start = timer_ticks ();
 
   ASSERT (intr_get_level () == INTR_ON);
-  while (timer_elapsed (start) < ticks) 
-    thread_yield ();
+  // msg("Work1");
+  struct thread *cur = thread_current ();
+  enum intr_level old_level;
+  old_level = intr_disable();
+  // Setting current thread (which is active) to blocked
+  cur->ticks_left = start + ticks;
+  struct list *sleeper_list = get_sleeper_list();
+  // msg("Work2");
+  list_insert_ordered(sleeper_list, &cur->sleeper_elem, &list_less_func_2, NULL);
+  thread_block();
+  intr_set_level(old_level);
 }
 
 /* Sleeps for approximately MS milliseconds.  Interrupts must be
@@ -165,12 +189,28 @@ timer_print_stats (void)
 {
   printf ("Timer: %"PRId64" ticks\n", timer_ticks ());
 }
-
+
 /* Timer interrupt handler. */
 static void
 timer_interrupt (struct intr_frame *args UNUSED)
 {
   ticks++;
+  enum intr_level old_level = intr_disable ();
+  struct list *sleeper_list = get_sleeper_list();
+  struct list_elem *e;
+  for (e = list_begin (sleeper_list); e != list_end (sleeper_list);
+      e = list_next (e))
+  {
+    struct thread *cur = list_entry (e, struct thread, sleeper_elem);
+    if (cur->ticks_left <= timer_ticks())
+    {
+      thread_unblock(cur);
+      list_remove(e);
+    } else {
+      break;
+    }
+  }
+  intr_set_level(old_level);
   thread_tick ();
 }
 
@@ -244,3 +284,5 @@ real_time_delay (int64_t num, int32_t denom)
   ASSERT (denom % 1000 == 0);
   busy_wait (loops_per_tick * num / 1000 * TIMER_FREQ / (denom / 1000)); 
 }
+
+

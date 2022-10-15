@@ -1,0 +1,73 @@
+ 			+------------------------+
+                  	|      	CS 450    	 |
+                  	| PROJECT 1: ALARM CLOCK |
+                  	| 	DESIGN DOCUMENT	 |
+                  	+------------------------+
+                           	  
+---- GROUP ----
+ 
+Patrick Glebus glebuspm@dukes.jmu.edu
+Jacob Lewis lewisjw@dukes.jmu.edu
+Andrew Fryer fryerak@dukes.jmu.edu
+Ernie Tussey tusseyel@dukes.jmu.edu
+ 
+---- PRELIMINARIES ----
+ 
+>> Used Dr.Buchholz as an outside resource. 	
+
+ALARM CLOCK
+                   	 	===========
+ 
+---- DATA STRUCTURES ----
+ 
+>> A1: Copy here the declaration of each new or changed `struct' or
+>> `struct' member, global or static variable, `typedef', or
+>> enumeration.  Identify the purpose of each in 25 words or less.
+
+In thread.h we made the following edits to the thread struct:
+* Shared sleeper list /
+    struct list_elem sleeper_elem; / Sleeping threads list /
+	-We added the sleeper_elem to keep track of the thread within the     sleeper list.
+
+    / amount of ticks till woken */
+    int64_t ticks_left;
+	-We added the ticks_left field to identify when to wake up a thread when it is ready.
+
+In thread.c we added the following static variable:
+/* List of processes in sleep state, that is, processes
+   that are asleep. */
+static struct list sleeper_list;
+We added the sleeper_list struct to have a list to keep track of all the sleeping threads. 
+
+
+
+
+ 
+---- ALGORITHMS ----
+ 
+>> A2: Briefly describe what happens in a call to timer_sleep(),
+>> including the effects of the timer interrupt handler.
+
+It gets the current thread, disables interrupts so the interrupt handler will not get called, gets the sleeper list, inserts the current element to be put asleep in order based on the number of ticks until it wakes, blocks the current thread, and then turns interrupts back to its previous state. 
+ 
+>> A3: What steps are taken to minimize the amount of time spent in
+>> the timer interrupt handler?
+When the first element in the sleeper list that is not eligible to be woken up is reached, we stop iterating through the list and re-enable interrupts and tick again.
+ 
+---- SYNCHRONIZATION ----
+ 
+>> A4: How are race conditions avoided when multiple threads call
+>> timer_sleep() simultaneously?
+We disable interrupts when blocking the current thread and adding it to the sleeping list.
+ 
+>> A5: How are race conditions avoided when a timer interrupt occurs
+>> during a call to timer_sleep()?
+We disable interrupts during the execution of the timer sleep in order to ensure the data structures can get fully updated before another tick/interrupt occurs.
+ 
+---- RATIONALE ----
+ 
+>> A6: Why did you choose this design?  In what ways is it superior to
+>> another design you considered?
+We chose this design because it was the most simple and straightforward design we could think of that was easy to execute, build, and understand. We considered another design in which the sleeper list was not ordered, but we found that design to be less efficient in decreasing the amount of time spent in the interrupt handler.
+
+

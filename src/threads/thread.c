@@ -24,6 +24,10 @@
    that are ready to run but not actually running. */
 static struct list ready_list;
 
+/* List of processes in sleep state, that is, processes
+   that are asleep. */
+static struct list sleeper_list;
+
 /* List of all processes.  Processes are added to this list
    when they are first scheduled and removed when they exit. */
 static struct list all_list;
@@ -71,6 +75,18 @@ static void schedule (void);
 void thread_schedule_tail (struct thread *prev);
 static tid_t allocate_tid (void);
 
+
+
+struct list* get_ready_list(void) 
+{
+  return &ready_list;
+}
+
+
+struct list* get_sleeper_list(void) 
+{
+  return &sleeper_list;
+}
 /* Initializes the threading system by transforming the code
    that's currently running into a thread.  This can't work in
    general and it is possible in this case only because loader.S
@@ -92,6 +108,7 @@ thread_init (void)
   lock_init (&tid_lock);
   list_init (&ready_list);
   list_init (&all_list);
+  list_init (&sleeper_list);
 
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
@@ -171,6 +188,12 @@ thread_create (const char *name, int priority,
   struct switch_entry_frame *ef;
   struct switch_threads_frame *sf;
   tid_t tid;
+  struct semaphore testing_sema;
+
+
+  sema_init(&testing_sema, 1);
+
+
 
   ASSERT (function != NULL);
 
@@ -444,6 +467,23 @@ static bool
 is_thread (struct thread *t)
 {
   return t != NULL && t->magic == THREAD_MAGIC;
+}
+
+struct thread*
+get_thread (tid_t tid) 
+{
+  struct list_elem *e;
+
+  for (e = list_begin (&all_list); e != list_end (&all_list);
+       e = list_next (e))
+    {
+      struct thread *t = list_entry (e, struct thread, allelem);
+      if (t->tid == tid) 
+      {
+        return t;
+      }
+    }
+  return NULL;
 }
 
 /* Does basic initialization of T as a blocked thread named

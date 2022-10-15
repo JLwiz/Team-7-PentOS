@@ -65,6 +65,7 @@ syscall_3 (struct intr_frame *f, int syscall_number, void *args)
 static void
 syscall_handler (struct intr_frame *f UNUSED) 
 {
+<<<<<<< HEAD
   /*
    * The system call number is in the 32-bit word at the caller's stack pointer.
    * The first argument is in the 32-bit word at the next higher address, and so on.
@@ -120,3 +121,48 @@ int write (int fd, const void *buffer, unsigned length)
   printf("Write Method\n");
   return 0;
 }
+=======
+
+  uint16_t *esp = f->esp;
+  printf("esp: %hn\n", esp);
+  if (esp == SYS_EXIT) 
+  {
+    exit(-1);
+  } 
+  else if (*esp == SYS_READ) 
+  {
+    printf("Read system call, exiting...");
+    thread_exit();
+  } 
+  else if (esp == SYS_WRITE)
+  {
+    printf("Read system call, exiting...");
+    thread_exit();
+  }
+
+
+  printf ("system call!\n");
+  thread_exit ();
+}
+
+void exit (int status) 
+{
+  printf("Exit system call, exiting...");
+  thread_exit();
+}
+
+int read (int fd, void *buffer, unsigned length) 
+{
+  printf("Read system call, exiting...");
+  thread_exit();
+}
+
+
+int write (int fd, const void *buffer, unsigned length)
+{
+  printf("Write system call, exiting...");
+  thread_exit();
+}
+
+
+>>>>>>> f2c1c2656f3dafc3a2eec331ba073bdf617b4dcf
