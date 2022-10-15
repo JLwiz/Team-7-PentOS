@@ -188,6 +188,12 @@ thread_create (const char *name, int priority,
   struct switch_entry_frame *ef;
   struct switch_threads_frame *sf;
   tid_t tid;
+  struct semaphore testing_sema;
+
+
+  sema_init(&testing_sema, 1);
+
+
 
   ASSERT (function != NULL);
 

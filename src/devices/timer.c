@@ -203,7 +203,6 @@ timer_interrupt (struct intr_frame *args UNUSED)
   for (e = list_begin (sleeper_list); e != list_end (sleeper_list);
       e = list_next (e))
   {
-    //msg("Yo Patrick youre 5'9''");
     struct thread *cur = list_entry (e, struct thread, sleeper_elem);
     if (cur->ticks_left <= timer_ticks())
     {

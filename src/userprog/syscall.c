@@ -15,6 +15,12 @@ syscall_init (void)
 static void
 syscall_handler (struct intr_frame *f UNUSED) 
 {
+
+  uint16_t *esp = f->esp;
+  printf("esp: %hn\n", esp);
+
+
+
   printf ("system call!\n");
   thread_exit ();
 }
