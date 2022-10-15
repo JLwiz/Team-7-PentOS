@@ -1,7 +1,13 @@
 {
     "files.associations": {
         "timer.h": "c",
+<<<<<<< HEAD
         "synch.h": "c",
         "*.inc": "c"
     }
+=======
+        "synch.h": "c"
+    },
+    "C_Cpp.errorSquiggles": "Disabled"
+>>>>>>> b1a8ab09d21812f11face3a326a8f6d2e6d9e33d
 }
