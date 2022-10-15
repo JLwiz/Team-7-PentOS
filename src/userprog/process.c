@@ -28,29 +28,19 @@ static bool load (const char *cmdline, void (**eip) (void), void **esp);
 tid_t
 process_execute (const char *file_name) 
 {
-  char *fn_copy, *save_ptr;
+  char *fn_copy;
   tid_t tid;
-  
-  
-
 
   /* Make a copy of FILE_NAME.
      Otherwise there's a race between the caller and load(). */
   fn_copy = palloc_get_page (0);
-
-  
   if (fn_copy == NULL) {
     printf("i am null\n");
     return TID_ERROR;
   }
 
-  
   strlcpy (fn_copy, file_name, PGSIZE);
-
   printf("fn_copy: %s\n", fn_copy);
-
-  
-  
 
   //printf("f_name: %s\n", f_name);
 
@@ -261,7 +251,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
   int i;
 
 
-  char *f_name = malloc(strlen(file_name) + 1);
+  char *f_name = (char *) malloc(strlen(file_name) + 1);
   strlcpy(f_name, file_name, strlen(file_name)+1);
   f_name = strtok_r(f_name, " ", &save_ptr);
   printf("token: %s\n", f_name);
