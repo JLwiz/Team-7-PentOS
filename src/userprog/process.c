@@ -263,8 +263,8 @@ load (const char *file_name, void (**eip) (void), void **esp)
 
   char *f_name = malloc(strlen(file_name) + 1);
   strlcpy(f_name, file_name, strlen(file_name)+1);
-  char *token = strtok_r(f_name, " ", &save_ptr);
-  printf("token: %s\n", token);
+  f_name = strtok_r(f_name, " ", &save_ptr);
+  printf("token: %s\n", f_name);
 
 
   /* Allocate and activate page directory. */
@@ -277,10 +277,10 @@ load (const char *file_name, void (**eip) (void), void **esp)
 
   //EDITED FROM ORIGINAL, FILE_NAME --> TOKEN
   /* Open executable file. */
-  file = filesys_open (token);
+  file = filesys_open (f_name);
   if (file == NULL) 
     {
-      printf ("load: %s: open failed\n", token);
+      printf ("load: %s: open failed\n", f_name);
       goto done; 
     }
 
@@ -373,12 +373,12 @@ load (const char *file_name, void (**eip) (void), void **esp)
 
 
   
-  while (token != NULL) 
+  while (f_name != NULL) 
   {
     //Saving each string token because the address
-    *--esp = (token);
-    token = strtok_r(NULL, " ", &save_ptr);
-    printf("stack pointer: 0x%02x  token: %s\n", *esp, token);
+    *--esp = (f_name);
+    f_name = strtok_r(NULL, " ", &save_ptr);
+    printf("stack pointer: 0x%02x  token: %s\n", *esp, f_name);
   }
   //push a fake return address
 
