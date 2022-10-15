@@ -111,8 +111,26 @@ exit (int status)
 int
 read (int fd, void *buffer, unsigned length)
 {
-  printf("Read Method\n");
-  return 0;
+  /* Invalid File Descriptor */
+  if (fd < 0) {
+    printf("Passed Invalid File Descriptor.\n");
+    return -1;
+  }
+
+  /* Null Buffer */
+  if (buffer == NULL) {
+    printf("Passed Buffer Is Null\n");
+    return -1;
+  }
+
+  /* Reading From Keyboard */
+  if (fd == 0) {
+    return input_getc();
+  }
+  
+  /* Reading From File */
+  printf("Reading from anything but STDIN not yet implemented.\n");
+  return -1;
 }
 
 int write (int fd, const void *buffer, unsigned length)
