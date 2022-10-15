@@ -374,17 +374,30 @@ load (const char *file_name, void (**eip) (void), void **esp)
   void *cur_sp = *esp;
   // need to count the amount of arguements pushed to stack.
   int argc = 0;
+  int alignment_check = 0;
   while (token != NULL) 
   {
+    alignment_check += (strlen(token) + 1);
     cur_sp -= (strlen(token) + 1);
     // memcpy into the void pntr
     memcpy(cur_sp, token, strlen(token) + 1);
     // *--esp = (token);
     argc++;
-    printf("stack pointer: 0x%02x  token: %s\n", cur_sp, token);
+    printf("stack pointer: 0x%02x  token: %s (arg position: %d)\n", cur_sp, token, argc);
     token = strtok_r(NULL, " ", &save_ptr);
   }
   printf("argc: %d\n", argc);
+  // aligned accesses are faster
+  int alignment = 0;
+  printf("pre align: %d\n", alignment_check);
+  while (alignment_check % 4 != 0)
+  {
+    alignment_check++;
+    alignment++;
+  }
+  printf("alignment: %d\n", alignment);
+  printf("final align: %d\n", alignment_check);
+  ASSERT(alignment_check % 4 == 0);
   //push a fake return address
 
 
