@@ -362,35 +362,58 @@ load (const char *file_name, void (**eip) (void), void **esp)
   }
 
   char *token = f_name;
-  void *cur_sp = *esp;
+  // void *cur_sp = *esp;
   // need to count the amount of arguements pushed to stack.
   int argc = 0;
   int alignment_check = 0;
-  while (token != NULL) 
+  char *argv[128];
+  // save argv in reverse order.
+  while (token != NULL)
   {
-    alignment_check += (strlen(token) + 1);
-    cur_sp -= (strlen(token) + 1);
-    // memcpy into the void pntr
-    memcpy(cur_sp, token, strlen(token) + 1);
-    // *--esp = (token);
+    argv[argc] = token;
     argc++;
-    printf("stack pointer: 0x%02x  token: %s (arg position: %d)\n", cur_sp, token, argc);
     token = strtok_r(NULL, " ", &save_ptr);
   }
+  char *token_addy[128];
+  for (int i = argc - 1; i >= 0; i--)
+  {
+    char *cur_token = argv[i];
+    int token_length = strlen(cur_token) + 1;
+    alignment_check += token_length;
+    *esp = (char *) *esp - token_length;
+    token_addy[i] = (char *) *esp;
+    // printf("token address %s\n", token_addy[i]);
+    memcpy(*esp, cur_token, token_length);
+  }
+  // push address of arguements
+  for (int i = argc - 1; i >= 0; i--)
+  {
+    *esp = (char *) *esp - sizeof(char *);
+    memcpy(*esp, &token_addy[i], sizeof(char *));
+  }
+  // should be pushing in reverse order, doesn't :)
+  // while (token != NULL) 
+  // {
+  //   alignment_check += (strlen(token) + 1);
+  //   cur_sp -= (strlen(token) + 1);
+  //   memcpy(cur_sp, token, strlen(token) + 1);
+  //   argc++;
+  //   printf("stack pointer: 0x%02x  token: %s (arg position: %d)\n", cur_sp, token, argc);
+  //   token = strtok_r(NULL, " ", &save_ptr);
+  // }
   printf("argc: %d\n", argc);
-  // aligned accesses are faster
+  // // aligned accesses are faster
   int alignment = 0;
-  printf("pre align: %d\n", alignment_check);
   while (alignment_check % 4 != 0)
   {
     alignment_check++;
     alignment++;
   }
-  printf("alignment: %d\n", alignment);
-  printf("final align: %d\n", alignment_check);
   ASSERT(alignment_check % 4 == 0);
-  //push a fake return address
-  *esp = cur_sp;
+
+  //push a fake return address  
+  // *esp = cur_sp;
+  hex_dump(PHYS_BASE, *esp, 128, true);
 
   /* Start address. */
   *eip = (void (*) (void)) ehdr.e_entry;
