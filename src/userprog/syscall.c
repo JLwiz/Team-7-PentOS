@@ -45,9 +45,11 @@ syscall_1 (struct intr_frame *f UNUSED, int syscall_number, void *arg)
 void
 syscall_3 (struct intr_frame *f UNUSED, int syscall_number, void *args)
 {
-  int arg0 = *((int*)args);       // Unused for now, replaced with STDIN/STDOUT.
+  int arg0 = *((int*)args);
   int arg1 = *((int*)(args + 4));
   int arg2 = *((int*)(args + 8));
+
+  // printf("Arg0: %d\nArg1: %d\nArg2: %d\n", arg0, arg1, arg2);
 
   switch (syscall_number) {
     case SYS_READ:
@@ -87,12 +89,10 @@ syscall_handler (struct intr_frame *f UNUSED)
     case SYS_READ:
       printf("Read\n");
       syscall_3(f, SYS_READ, args);
-      thread_exit();
       break;
     case SYS_WRITE:
       printf("Write\n");
       syscall_3(f, SYS_WRITE, args);
-      thread_exit();
       break;
     default:
       printf("This System Call (%d) is not yet supported.\n", syscall_number);
