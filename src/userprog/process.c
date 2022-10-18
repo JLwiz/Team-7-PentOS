@@ -410,11 +410,11 @@ load (const char *file_name, void (**eip) (void), void **esp)
   *esp = (char **) *esp - sizeof(char **);
   memcpy(*esp, &start_of_arg_addresses, sizeof(char **));
   // push argc
-  *esp = (char *) *esp - sizeof(int);
+  *esp = (int) *esp - sizeof(int);
   memcpy(*esp, &argc, sizeof(int));
   // push return address.
   void *return_address = 0;
-  *esp = (char *) *esp - sizeof(void *);
+  *esp = (void *) *esp - sizeof(void *);
   memcpy(*esp, &return_address, sizeof(void *));
   hex_dump(*esp, *esp, 128, true);
 
