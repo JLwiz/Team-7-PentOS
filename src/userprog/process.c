@@ -385,22 +385,6 @@ load (const char *file_name, void (**eip) (void), void **esp)
     // printf("token address %s\n", token_addy[i]);
     memcpy(*esp, cur_token, token_length);
   }
-  // push address of arguements
-  for (int i = argc - 1; i >= 0; i--)
-  {
-    *esp = (char *) *esp - sizeof(char *);
-    memcpy(*esp, &token_addy[i], sizeof(char *));
-  }
-  // should be pushing in reverse order, doesn't :)
-  // while (token != NULL) 
-  // {
-  //   alignment_check += (strlen(token) + 1);
-  //   cur_sp -= (strlen(token) + 1);
-  //   memcpy(cur_sp, token, strlen(token) + 1);
-  //   argc++;
-  //   printf("stack pointer: 0x%02x  token: %s (arg position: %d)\n", cur_sp, token, argc);
-  //   token = strtok_r(NULL, " ", &save_ptr);
-  // }
   printf("argc: %d\n", argc);
   // // aligned accesses are faster
   int alignment = 0;
@@ -409,10 +393,21 @@ load (const char *file_name, void (**eip) (void), void **esp)
     alignment_check++;
     alignment++;
   }
+  // TODO: handle alignment check and null pointer sentinels
+  // *esp = (uint8_t *) *esp - sizeof(uint8_t *);
+  // memcpy(*esp, alignment, sizeof(uint8_t *));
+  char *sentinel = '\0';
+  *esp = (char *) *esp - sizeof(char *);
+  memcpy(*esp, &sentinel, sizeof(char *));
   ASSERT(alignment_check % 4 == 0);
-
-  //push a fake return address  
-  // *esp = cur_sp;
+  // push address of arguements
+  for (int i = argc - 1; i >= 0; i--)
+  {
+    *esp = (char *) *esp - sizeof(char *);
+    memcpy(*esp, &token_addy[i], sizeof(char *));
+  }
+  // push argc
+  // push return address.
   hex_dump(PHYS_BASE, *esp, 128, true);
 
   /* Start address. */
