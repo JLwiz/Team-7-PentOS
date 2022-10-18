@@ -29,6 +29,7 @@ void
 syscall_1 (struct intr_frame *f UNUSED, int syscall_number, void *arg)
 {
   int arg0 = *((int*)arg);
+  f->esp += 4;
 
   /* Switch incase there will be further implementation */
   switch (syscall_number) {
@@ -46,10 +47,11 @@ void
 syscall_3 (struct intr_frame *f UNUSED, int syscall_number, void *args)
 {
   int arg0 = *((int*)args);
-  int arg1 = *((int*)(args + 4));
-  int arg2 = *((int*)(args + 8));
-
-  // printf("Arg0: %d\nArg1: %d\nArg2: %d\n", arg0, arg1, arg2);
+  args += 4;
+  int arg1 = *((int*)(args));
+  args += 4;
+  int arg2 = *((int*)(args));
+  args += 4;
 
   switch (syscall_number) {
     case SYS_READ:
@@ -149,15 +151,17 @@ write (int fd, const void *buffer, unsigned length)
     return -1;
   }
 
+  uint8_t *buff = (uint8_t*) buffer;
+
   /* Null Buffer */
-  if (buffer == NULL) {
+  if (buff == NULL) {
     printf("Passed A Null Buffer.\n");
     return -1;
   }
 
   /* Write To STDOUT */
   if (fd == 1) {
-    putbuf((char*)buffer, length);
+    putbuf((char*)buff, length);
     return (int) length;
   }
 
