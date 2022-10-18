@@ -408,7 +408,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
   }
   // push argc
   // push return address.
-  hex_dump(PHYS_BASE, *esp, 128, true);
+  hex_dump(*esp, *esp, 128, true);
 
   /* Start address. */
   *eip = (void (*) (void)) ehdr.e_entry;
