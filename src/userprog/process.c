@@ -396,10 +396,10 @@ load (const char *file_name, void (**eip) (void), void **esp)
   // TODO: handle alignment check and null pointer sentinels
   // *esp = (uint8_t *) *esp - sizeof(uint8_t *);
   // memcpy(*esp, alignment, sizeof(uint8_t *));
-  char *sentinel = '\0';
+  ASSERT(alignment_check % 4 == 0);
+  char *sentinel = 0;
   *esp = (char *) *esp - sizeof(char *);
   memcpy(*esp, &sentinel, sizeof(char *));
-  ASSERT(alignment_check % 4 == 0);
   // push address of arguements
   for (int i = argc - 1; i >= 0; i--)
   {
