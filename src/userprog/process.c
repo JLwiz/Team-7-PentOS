@@ -374,15 +374,15 @@ load (const char *file_name, void (**eip) (void), void **esp)
     argc++;
     token = strtok_r(NULL, " ", &save_ptr);
   }
-  char *token_addy[128];
+  char *arg_addresses[128];
   for (int i = argc - 1; i >= 0; i--)
   {
     char *cur_token = argv[i];
     int token_length = strlen(cur_token) + 1;
     alignment_check += token_length;
     *esp = (char *) *esp - token_length;
-    token_addy[i] = (char *) *esp;
-    // printf("token address %s\n", token_addy[i]);
+    arg_addresses[i] = (char *) *esp;
+    // printf("token address %s\n", arg_addresses[i]);
     memcpy(*esp, cur_token, token_length);
   }
   printf("argc: %d\n", argc);
@@ -404,7 +404,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
   for (int i = argc - 1; i >= 0; i--)
   {
     *esp = (char *) *esp - sizeof(char *);
-    memcpy(*esp, &token_addy[i], sizeof(char *));
+    memcpy(*esp, &arg_addresses[i], sizeof(char *));
   }
   // push argc
   // push return address.
