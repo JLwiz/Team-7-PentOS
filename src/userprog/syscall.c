@@ -80,6 +80,8 @@ syscall_handler (struct intr_frame *f UNUSED)
     thread_exit();
   }
 
+  hex_dump(f->esp, f->esp, 512, true);
+
   int syscall_number = *((int*)f->esp);
   void *args = f->esp += 4;
     
