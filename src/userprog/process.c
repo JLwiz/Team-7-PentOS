@@ -381,9 +381,10 @@ load (const char *file_name, void (**eip) (void), void **esp)
     int token_length = strlen(cur_token) + 1;
     alignment_check += token_length;
     *esp = (char *) *esp - token_length;
-    arg_addresses[i] = (char *) *esp;
-    // printf("token address %s\n", arg_addresses[i]);
+    // MAYBE WRONG
     memcpy(*esp, cur_token, token_length);
+    arg_addresses[i] = *esp;
+    printf("token address %p\n", arg_addresses[i]);
   }
   printf("argc: %d\n", argc);
   // // aligned accesses are faster
@@ -404,11 +405,18 @@ load (const char *file_name, void (**eip) (void), void **esp)
   for (int i = argc - 1; i >= 0; i--)
   {
     *esp = (char *) *esp - sizeof(char *);
+    printf("current address: %p\n", arg_addresses[i]);
     memcpy(*esp, &arg_addresses[i], sizeof(char *));
   }
+  // should point arguement in argv
+  // whatever as the start address of X000000 should point the that address of argv[0]
+  printf("curr esp start of arg address: %p\n", *esp);
+  // this is the address of argv[0]
   char **start_of_arg_addresses = *esp;
   *esp = (char **) *esp - sizeof(char **);
+  printf("location of argv[0] in memset: %p\n", *start_of_arg_addresses);
   memcpy(*esp, &start_of_arg_addresses, sizeof(char **));
+  printf("esp is now %p after memset\n", *esp);
   // push argc
   *esp = (int) *esp - sizeof(int);
   memcpy(*esp, &argc, sizeof(int));
