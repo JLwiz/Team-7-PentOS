@@ -367,6 +367,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
   int argc = 0;
   int alignment_check = 0;
   char *argv[128];
+
   // save argv in reverse order.
   while (token != NULL)
   {
@@ -374,6 +375,8 @@ load (const char *file_name, void (**eip) (void), void **esp)
     argc++;
     token = strtok_r(NULL, " ", &save_ptr);
   }
+
+  /* Add Arguments to Stack */
   char *arg_addresses[128];
   for (int i = argc - 1; i >= 0; i--)
   {
@@ -384,46 +387,47 @@ load (const char *file_name, void (**eip) (void), void **esp)
     // MAYBE WRONG
     memcpy(*esp, cur_token, token_length);
     arg_addresses[i] = *esp;
-    printf("token address %p\n", arg_addresses[i]);
   }
-  printf("argc: %d\n", argc);
-  // // aligned accesses are faster
+
+  // aligned accesses are faster
   int alignment = 0;
   while (alignment_check % 4 != 0)
   {
     alignment_check++;
     alignment++;
   }
-  // TODO: handle alignment check and null pointer sentinels
-  // *esp = (uint8_t *) *esp - sizeof(uint8_t *);
-  // memcpy(*esp, alignment, sizeof(uint8_t *));
+
+  /* If alignment is off, decrement by off amount and push word align */
+  if (alignment != 0) {
+    *esp -= alignment;
+    memset(*esp, 0, alignment);
+  }
+
   ASSERT(alignment_check % 4 == 0);
   char *sentinel = 0;
   *esp = (char *) *esp - sizeof(char *);
   memcpy(*esp, &sentinel, sizeof(char *));
+
   // push address of arguements
   for (int i = argc - 1; i >= 0; i--)
   {
-    // *esp = (char *) *esp - sizof(char*);
     *esp -= sizeof(char *);
-    printf("current address: %p\n", arg_addresses[i]);
     memcpy(*esp, &arg_addresses[i], sizeof(char *));
   }
-  // should point arguement in argv
-  // whatever as the start address of X000000 should point the that address of argv[0]
-  printf("curr esp start of arg address: %p\n", *esp);
-  // this is the address of argv[0]
-  char **start_of_arg_addresses = *esp;
-  *esp = (char **) *esp - sizeof(char **);
-  printf("location of argv[0] in memset: %p\n", *start_of_arg_addresses);
-  memcpy(*esp, &start_of_arg_addresses, sizeof(char **));
-  printf("esp is now %p after memset\n", *esp);
+
+  /* Pushing Argv */
+  char ** start_of_arg_addresses = (char **) *esp;
+  *esp -= sizeof(char **);
+  *((char ***) *esp) = start_of_arg_addresses;
+
   // push argc
   *esp = (int) *esp - sizeof(int);
   memcpy(*esp, &argc, sizeof(int));
+
   // push return address.
   void *return_address = 0;
   *esp = *esp - sizeof(void *);
+
   memcpy(*esp, &return_address, sizeof(void *));
   hex_dump(*esp, *esp, 128, true);
 
