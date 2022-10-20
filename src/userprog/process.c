@@ -404,7 +404,8 @@ load (const char *file_name, void (**eip) (void), void **esp)
   // push address of arguements
   for (int i = argc - 1; i >= 0; i--)
   {
-    *esp = (char *) *esp - sizeof(char *);
+    // *esp = (char *) *esp - sizof(char*);
+    *esp -= sizeof(char *);
     printf("current address: %p\n", arg_addresses[i]);
     memcpy(*esp, &arg_addresses[i], sizeof(char *));
   }
