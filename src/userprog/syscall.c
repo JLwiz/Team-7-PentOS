@@ -130,7 +130,6 @@ write (int fd, const void *buffer, unsigned length)
   /* Write To STDOUT */
   if (fd == 1) {
     putbuf((char*)buff, length);
-    printf("\n");
     return (int) length;
   }
 

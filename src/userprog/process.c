@@ -41,9 +41,6 @@ process_execute (const char *file_name)
   }
 
   strlcpy (fn_copy, file_name, PGSIZE);
-  printf("fn_copy: %s\n", fn_copy);
-
-  //printf("f_name: %s\n", f_name);
 
   /* Create a new thread to execute FILE_NAME. */
 
@@ -58,7 +55,6 @@ process_execute (const char *file_name)
     palloc_free_page (fn_copy);
 
   //sema_up(thread->testing_sema);
-  printf("made it here tid\n");
   return tid;
 }
 
@@ -67,8 +63,6 @@ process_execute (const char *file_name)
 static void
 start_process (void *file_name_)
 {
-  
-  printf("made it here 1\n");
   char *file_name = file_name_;
   struct intr_frame if_;
   bool success;
@@ -78,10 +72,6 @@ start_process (void *file_name_)
   if_.gs = if_.fs = if_.es = if_.ds = if_.ss = SEL_UDSEG;
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
-  printf("Entering load\n");
-
-  //tokenization
-
   success = load (file_name, &if_.eip, &if_.esp);
 
 
@@ -92,8 +82,6 @@ start_process (void *file_name_)
     printf("Failed to load\n");
     thread_exit ();
   }
-
-  printf("Reached past enterting load\n");
 
   /* Start the user _exec by simulating a return from an
      interrupt, implemented by intr_exit (in
@@ -239,7 +227,7 @@ static bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
 bool
 load (const char *file_name, void (**eip) (void), void **esp) 
 {
-  char *fn_copy, *save_ptr;
+  char *save_ptr;
   struct thread *t = thread_current ();
   struct Elf32_Ehdr ehdr;
   struct file *file = NULL;
@@ -402,7 +390,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
   memcpy(*esp, &start_of_arg_addresses, sizeof(char **)); 
 
   // push argc
-  *esp = (int) *esp - sizeof(int);
+  *esp -= sizeof(argc);
   memcpy(*esp, &argc, sizeof(int));
 
   // push return address.
