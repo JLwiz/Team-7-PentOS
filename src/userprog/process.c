@@ -239,10 +239,6 @@ static bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
 bool
 load (const char *file_name, void (**eip) (void), void **esp) 
 {
-
-
-
-  printf("made it here 1 (load)\n");
   char *fn_copy, *save_ptr;
   struct thread *t = thread_current ();
   struct Elf32_Ehdr ehdr;
@@ -251,20 +247,15 @@ load (const char *file_name, void (**eip) (void), void **esp)
   bool success = false;
   int i;
 
-
   char *f_name = (char *) malloc(strlen(file_name) + 1);
   strlcpy(f_name, file_name, strlen(file_name)+1);
   f_name = strtok_r(f_name, " ", &save_ptr);
-  printf("token: %s\n", f_name);
-
 
   /* Allocate and activate page directory. */
   t->pagedir = pagedir_create ();
   if (t->pagedir == NULL) 
     goto done;
   process_activate ();
-
-  
 
   //EDITED FROM ORIGINAL, FILE_NAME --> TOKEN
   /* Open executable file. */
@@ -276,9 +267,6 @@ load (const char *file_name, void (**eip) (void), void **esp)
     }
 
   /* Read and verify executable header. */
-
-  printf("made it here 2(load)\n");
-  
   if (file_read (file, &ehdr, sizeof ehdr) != sizeof ehdr
       || memcmp (ehdr.e_ident, "\177ELF\1\1\1", 7)
       || ehdr.e_type != 2
@@ -292,8 +280,6 @@ load (const char *file_name, void (**eip) (void), void **esp)
       goto done; 
     }
 
-
-  printf("made it here 3\n");
   /* Read program headers. */
   file_ofs = ehdr.e_phoff;
   for (i = 0; i < ehdr.e_phnum; i++) 
@@ -353,8 +339,6 @@ load (const char *file_name, void (**eip) (void), void **esp)
         }
     }
 
-
-  printf("made it here 4\n");
   /* Set up stack. */
   if (!setup_stack (esp)) {
     printf("Failed to set up stack\n");
@@ -362,8 +346,6 @@ load (const char *file_name, void (**eip) (void), void **esp)
   }
 
   char *token = f_name;
-  // void *cur_sp = *esp;
-  // need to count the amount of arguements pushed to stack.
   int argc = 0;
   int alignment_check = 0;
   char *argv[128];
@@ -384,7 +366,6 @@ load (const char *file_name, void (**eip) (void), void **esp)
     int token_length = strlen(cur_token) + 1;
     alignment_check += token_length;
     *esp = (char *) *esp - token_length;
-    // MAYBE WRONG
     memcpy(*esp, cur_token, token_length);
     arg_addresses[i] = *esp;
   }
@@ -403,7 +384,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
     memset(*esp, 0, alignment);
   }
 
-  ASSERT(alignment_check % 4 == 0);
+  /* Adding null sentinel to mark end of array */
   char *sentinel = 0;
   *esp = (char *) *esp - sizeof(char *);
   memcpy(*esp, &sentinel, sizeof(char *));
@@ -429,7 +410,6 @@ load (const char *file_name, void (**eip) (void), void **esp)
   *esp = *esp - sizeof(void *);
 
   memcpy(*esp, &return_address, sizeof(void *));
-  hex_dump(*esp, *esp, 128, true);
 
   /* Start address. */
   *eip = (void (*) (void)) ehdr.e_entry;
