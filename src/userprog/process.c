@@ -416,9 +416,9 @@ load (const char *file_name, void (**eip) (void), void **esp)
   }
 
   /* Pushing Argv */
-  char ** start_of_arg_addresses = (char **) *esp;
+  char **start_of_arg_addresses = (char **) *esp;
   *esp -= sizeof(char **);
-  *((char ***) *esp) = start_of_arg_addresses;
+  memcpy(*esp, &start_of_arg_addresses, sizeof(char **)); 
 
   // push argc
   *esp = (int) *esp - sizeof(int);

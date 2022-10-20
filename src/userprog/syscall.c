@@ -46,6 +46,7 @@ syscall_1 (struct intr_frame *f UNUSED, int syscall_number, void *arg)
 void
 syscall_3 (struct intr_frame *f UNUSED, int syscall_number, void *args)
 {
+  intr_dump_frame(f);
   int arg0 = *((int*)args);
   args += 4;
   int arg1 = *((int*)(args));
@@ -70,6 +71,10 @@ syscall_3 (struct intr_frame *f UNUSED, int syscall_number, void *args)
 static void
 syscall_handler (struct intr_frame *f UNUSED) 
 {
+
+  printf("Entering systemcall \n");
+  hex_dump(f->esp, f->esp, 64, true);
+  intr_dump_frame(f);
   /*
    * The system call number is in the 32-bit word at the caller's stack pointer.
    * The first argument is in the 32-bit word at the next higher address, and so on.
@@ -80,10 +85,14 @@ syscall_handler (struct intr_frame *f UNUSED)
     thread_exit();
   }
 
+  printf("Syscall Stack Pointer: %p\n", f->esp);
+
   hex_dump(f->esp, f->esp, 512, true);
 
   int syscall_number = *((int*)f->esp);
   void *args = f->esp += 4;
+  printf("Syscall Stack Pointer: %p\n", f->esp);
+
     
   switch (syscall_number) {
     case SYS_EXIT:
@@ -114,8 +123,6 @@ exit (int status)
   printf("%s: exit(%d)\n", cur->name, status);
   cur->status = status;
 
-  /* Need to check if current thread is a child of another thread */
-
   thread_exit();
 }
 
@@ -143,7 +150,6 @@ read (int fd, void *buffer, unsigned length UNUSED)
   printf("Reading from anything but STDIN not yet implemented.\n");
   return -1;
 }
-
 int
 write (int fd, const void *buffer, unsigned length)
 {
