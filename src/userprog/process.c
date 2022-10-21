@@ -40,12 +40,7 @@ process_execute (const char *file_name)
     return TID_ERROR;
   }
 
-  strlcpy (fn_copy, file_name, PGSIZE);
-
-  /* Create a new thread to execute FILE_NAME. */
-
-  // struct thread* thread = thread_current();
-  // sema_down(thread->testing_sema);
+  strlcpy(fn_copy, file_name, PGSIZE);
 
   tid = thread_create (fn_copy, PRI_DEFAULT, start_process, fn_copy);
 
@@ -238,6 +233,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
   char *f_name = (char *) malloc(strlen(file_name) + 1);
   strlcpy(f_name, file_name, strlen(file_name)+1);
   f_name = strtok_r(f_name, " ", &save_ptr);
+  strlcpy (t->name, f_name, sizeof t->name);
 
   /* Allocate and activate page directory. */
   t->pagedir = pagedir_create ();
