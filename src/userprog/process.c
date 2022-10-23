@@ -19,6 +19,9 @@
 #include "threads/thread.h"
 #include "threads/vaddr.h"
 
+
+struct semaphore global_sema;
+
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
 
@@ -31,6 +34,7 @@ process_execute (const char *file_name)
 {
   char *fn_copy;
   tid_t tid;
+  sema_init(&global_sema, 1);
 
   /* Make a copy of FILE_NAME.
      Otherwise there's a race between the caller and load(). */
@@ -44,7 +48,10 @@ process_execute (const char *file_name)
 
   tid = thread_create (fn_copy, PRI_DEFAULT, start_process, fn_copy);
 
-  process_wait(tid);
+  //process_wait(tid);
+
+  sema_down(&global_sema);
+  
 
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy);
@@ -101,7 +108,11 @@ int
 process_wait (tid_t child_tid UNUSED) 
 {
   struct thread* child = get_thread(child_tid);
-  while (child->status != THREAD_DYING);
+  if (child->status != THREAD_DYING) 
+  {
+    sema_down(&global_sema);
+  }
+  
   return child->status;
 }
 
@@ -128,6 +139,7 @@ process_exit (void)
       pagedir_activate (NULL);
       pagedir_destroy (pd);
     }
+  sema_up(&global_sema);
 }
 
 /* Sets up the CPU for running user code in the current
