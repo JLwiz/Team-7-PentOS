@@ -52,7 +52,6 @@ process_execute (const char *file_name)
 
   if (tid == TID_ERROR) {
     palloc_free_page (fn_copy);
-    return TID_ERROR;
   }
   sema_down(&global_sema);
   //sema_up(thread->testing_sema);
@@ -74,18 +73,13 @@ start_process (void *file_name_)
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
   success = load (file_name, &if_.eip, &if_.esp);
-
+  sema_up(&global_sema);
 
  
   /* If load failed, quit. */
   palloc_free_page (file_name);
   if (!success) {
-    sema_up(&global_sema);
-    printf("Failed to load\n");
-    thread_current()->status = -1;
     thread_exit ();
-  } else {
-    sema_up(&global_sema);
   }
 
   /* Start the user _exec by simulating a return from an
@@ -226,7 +220,8 @@ struct Elf32_Phdr
 #define PF_W 2          /* Writable. */
 #define PF_R 4          /* Readable. */
 
-static bool setup_stack (void **esp);
+
+static bool setup_stack (void **esp, const char *f_name, char *save_ptr) ;
 static bool validate_segment (const struct Elf32_Phdr *, struct file *);
 static bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
                           uint32_t read_bytes, uint32_t zero_bytes,
@@ -341,77 +336,17 @@ load (const char *file_name, void (**eip) (void), void **esp)
     }
 
   /* Set up stack. */
-  if (!setup_stack (esp)) {
+  if (!setup_stack (esp, f_name, save_ptr)) {
     printf("Failed to set up stack\n");
     goto done;
   }
 
-  char *token = f_name;
-  int argc = 0;
-  int alignment_check = 0;
-  char *argv[128];
+  // char *token = f_name;
+  // int argc = 0;
+  // int alignment_check = 0;
+  // char *argv[128];
 
   // save argv in reverse order.
-  while (token != NULL)
-  {
-    argv[argc] = token;
-    argc++;
-    token = strtok_r(NULL, " ", &save_ptr);
-  }
-
-  /* Add Arguments to Stack */
-  char *arg_addresses[128];
-  for (int i = argc - 1; i >= 0; i--)
-  {
-    char *cur_token = argv[i];
-    int token_length = strlen(cur_token) + 1;
-    alignment_check += token_length;
-    *esp = (char *) *esp - token_length;
-    memcpy(*esp, cur_token, token_length);
-    arg_addresses[i] = *esp;
-  }
-
-  // aligned accesses are faster
-  int alignment = 0;
-  while (alignment_check % 4 != 0)
-  {
-    alignment_check++;
-    alignment++;
-  }
-
-  /* If alignment is off, decrement by off amount and push word align */
-  if (alignment != 0) {
-    *esp -= alignment;
-    memset(*esp, 0, alignment);
-  }
-
-  /* Adding null sentinel to mark end of array */
-  char *sentinel = 0;
-  *esp = (char *) *esp - sizeof(char *);
-  memcpy(*esp, &sentinel, sizeof(char *));
-
-  // push address of arguements
-  for (int i = argc - 1; i >= 0; i--)
-  {
-    *esp -= sizeof(char *);
-    memcpy(*esp, &arg_addresses[i], sizeof(char *));
-  }
-
-  /* Pushing Argv */
-  char **start_of_arg_addresses = (char **) *esp;
-  *esp -= sizeof(char **);
-  memcpy(*esp, &start_of_arg_addresses, sizeof(char **)); 
-
-  // push argc
-  *esp -= sizeof(argc);
-  memcpy(*esp, &argc, sizeof(int));
-
-  // push return address.
-  void *return_address = 0;
-  *esp = *esp - sizeof(void *);
-
-  memcpy(*esp, &return_address, sizeof(void *));
-
   /* Start address. */
   *eip = (void (*) (void)) ehdr.e_entry;
 
@@ -534,7 +469,7 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 /* Create a minimal stack by mapping a zeroed page at the top of
    user virtual memory. */
 static bool
-setup_stack (void **esp) 
+setup_stack (void **esp, const char *f_name, char *save_ptr) 
 {
   uint8_t *kpage;
   bool success = false;
@@ -547,7 +482,73 @@ setup_stack (void **esp)
         *esp = PHYS_BASE;
       else
         palloc_free_page (kpage);
+          char *token = f_name;
+      int argc = 0;
+      int alignment_check = 0;
+      char *argv[128];
+
+      // save argv in reverse order.
+      while (token != NULL)
+      {
+        argv[argc] = token;
+        argc++;
+        token = strtok_r(NULL, " ", &save_ptr);
+      }
+
+      /* Add Arguments to Stack */
+      char *arg_addresses[128];
+      for (int i = argc - 1; i >= 0; i--)
+      {
+        char *cur_token = argv[i];
+        int token_length = strlen(cur_token) + 1;
+        alignment_check += token_length;
+        *esp = (char *) *esp - token_length;
+        memcpy(*esp, cur_token, token_length);
+        arg_addresses[i] = *esp;
+      }
+
+      // aligned accesses are faster
+      int alignment = 0;
+      while (alignment_check % 4 != 0)
+      {
+        alignment_check++;
+        alignment++;
+      }
+
+      /* If alignment is off, decrement by off amount and push word align */
+      if (alignment != 0) {
+        *esp -= alignment;
+        memset(*esp, 0, alignment);
+      }
+
+      /* Adding null sentinel to mark end of array */
+      char *sentinel = 0;
+      *esp = (char *) *esp - sizeof(char *);
+      memcpy(*esp, &sentinel, sizeof(char *));
+
+      // push address of arguements
+      for (int i = argc - 1; i >= 0; i--)
+      {
+        *esp -= sizeof(char *);
+        memcpy(*esp, &arg_addresses[i], sizeof(char *));
+      }
+
+      /* Pushing Argv */
+      char **start_of_arg_addresses = (char **) *esp;
+      *esp -= sizeof(char **);
+      memcpy(*esp, &start_of_arg_addresses, sizeof(char **)); 
+
+      // push argc
+      *esp -= sizeof(argc);
+      memcpy(*esp, &argc, sizeof(int));
+
+      // push return address.
+      void *return_address = 0;
+      *esp = *esp - sizeof(void *);
+
+      memcpy(*esp, &return_address, sizeof(void *));
     }
+
   return success;
 }
 

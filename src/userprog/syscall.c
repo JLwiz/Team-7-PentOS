@@ -92,13 +92,13 @@ read (int fd, void *buffer, unsigned length UNUSED)
 {
   /* Invalid File Descriptor */
   if (fd < 0) {
-    printf("Passed Invalid File Descriptor.\n");
+    // printf("Passed Invalid File Descriptor.\n");
     return -1;
   }
 
   /* Null Buffer */
   if (buffer == NULL) {
-    printf("Passed A Null Buffer.\n");
+    // printf("Passed A Null Buffer.\n");
     return -1;
   }
 
@@ -108,7 +108,7 @@ read (int fd, void *buffer, unsigned length UNUSED)
   }
 
   /* Reading From File */
-  printf("Reading from anything but STDIN not yet implemented.\n");
+  // printf("Reading from anything but STDIN not yet implemented.\n");
   return -1;
 }
 int
@@ -116,7 +116,7 @@ write (int fd, const void *buffer, unsigned length)
 {
   /* Invalid File Descriptor */
   if (fd < 0) {
-    printf("Passed Invalid File Descriptor.\n");
+    // printf("Passed Invalid File Descriptor.\n");
     return -1;
   }
 
@@ -124,7 +124,7 @@ write (int fd, const void *buffer, unsigned length)
 
   /* Null Buffer */
   if (buff == NULL) {
-    printf("Passed A Null Buffer.\n");
+    // printf("Passed A Null Buffer.\n");
     return -1;
   }
 
@@ -135,6 +135,6 @@ write (int fd, const void *buffer, unsigned length)
   }
 
   /* Writing To File */
-  printf("Writing to anything but STDOUT not yet implemented.\n");
+  // printf("Writing to anything but STDOUT not yet implemented.\n");
   return -1;
 }
