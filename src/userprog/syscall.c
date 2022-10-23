@@ -80,7 +80,8 @@ exit (int status)
 {
   /* Getting current thread */
   struct thread *cur = thread_current();
-  printf("%s: exit(%d)\n", cur->name, status);
+  // should be in process.
+  // printf("%s: exit(%d)\n", cur->name, status);
   cur->status = status;
 
   thread_exit();

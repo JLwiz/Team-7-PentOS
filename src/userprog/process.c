@@ -40,22 +40,21 @@ process_execute (const char *file_name)
      Otherwise there's a race between the caller and load(). */
   fn_copy = palloc_get_page (0);
   if (fn_copy == NULL) {
-    printf("i am null\n");
     return TID_ERROR;
   }
-
   strlcpy(fn_copy, file_name, PGSIZE);
 
   tid = thread_create (fn_copy, PRI_DEFAULT, start_process, fn_copy);
 
   //process_wait(tid);
 
-  sema_down(&global_sema);
   
 
-  if (tid == TID_ERROR)
+  if (tid == TID_ERROR) {
     palloc_free_page (fn_copy);
-
+    return TID_ERROR;
+  }
+  sema_down(&global_sema);
   //sema_up(thread->testing_sema);
   return tid;
 }
@@ -81,8 +80,12 @@ start_process (void *file_name_)
   /* If load failed, quit. */
   palloc_free_page (file_name);
   if (!success) {
+    sema_up(&global_sema);
     printf("Failed to load\n");
+    thread_current()->status = -1;
     thread_exit ();
+  } else {
+    sema_up(&global_sema);
   }
 
   /* Start the user _exec by simulating a return from an
@@ -108,6 +111,8 @@ int
 process_wait (tid_t child_tid UNUSED) 
 {
   struct thread* child = get_thread(child_tid);
+  if (child == NULL)
+    return -1;
   if (child->status != THREAD_DYING) 
   {
     sema_down(&global_sema);
@@ -122,9 +127,10 @@ process_exit (void)
 {
   struct thread *cur = thread_current ();
   uint32_t *pd;
-
+  sema_up(&global_sema);
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
+  printf("%s: exit(%d)\n", cur->name, cur->status);
   pd = cur->pagedir;
   if (pd != NULL) 
     {
@@ -139,7 +145,6 @@ process_exit (void)
       pagedir_activate (NULL);
       pagedir_destroy (pd);
     }
-  sema_up(&global_sema);
 }
 
 /* Sets up the CPU for running user code in the current
