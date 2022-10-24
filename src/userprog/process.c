@@ -46,15 +46,10 @@ process_execute (const char *file_name)
 
   tid = thread_create (fn_copy, PRI_DEFAULT, start_process, fn_copy);
 
-  //process_wait(tid);
-
-  
-
   if (tid == TID_ERROR) {
     palloc_free_page (fn_copy);
   }
   sema_down(&global_sema);
-  //sema_up(thread->testing_sema);
   return tid;
 }
 
@@ -124,7 +119,6 @@ process_exit (void)
   sema_up(&global_sema);
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
-  //printf("%s: exit(%d)\n", cur->name, cur->status);
   pd = cur->pagedir;
   if (pd != NULL) 
     {
@@ -341,12 +335,6 @@ load (const char *file_name, void (**eip) (void), void **esp)
     goto done;
   }
 
-  // char *token = f_name;
-  // int argc = 0;
-  // int alignment_check = 0;
-  // char *argv[128];
-
-  // save argv in reverse order.
   /* Start address. */
   *eip = (void (*) (void)) ehdr.e_entry;
 
@@ -482,7 +470,7 @@ setup_stack (void **esp, const char *f_name, char *save_ptr)
         *esp = PHYS_BASE;
       else
         palloc_free_page (kpage);
-          char *token = f_name;
+      char *token = f_name;
       int argc = 0;
       int alignment_check = 0;
       char *argv[128];
