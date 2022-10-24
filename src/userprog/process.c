@@ -473,9 +473,9 @@ setup_stack (void **esp, char *f_name, char *save_ptr)
       char *token = f_name;
       int argc = 0;
       char *argv[COMMAND_LINE_LIMIT];
-      // Probably better to do through an intermediary value.
+      /* Probably better to do through an intermediary value. */
       void *sp_copy = *esp;
-      // save argv in reverse order.
+      /* Save argv in reverse order. */
       while (token != NULL)
       {
         argv[argc] = token;
@@ -496,7 +496,7 @@ setup_stack (void **esp, char *f_name, char *save_ptr)
         arg_addresses[i] = sp_copy;
       }
 
-      // aligned accesses are faster
+      /* Aligned accesses are faster */
       int alignment = 0;
       while (alignment_check % 4 != 0)
       {
@@ -506,7 +506,7 @@ setup_stack (void **esp, char *f_name, char *save_ptr)
 
       /* If alignment is off, decrement by off amount and push word align */
       if (alignment != 0) {
-        sp_copy -= alignment;
+        sp_copy -= sizeof(char) * alignment;
         memset(sp_copy, 0, alignment);
       }
 
@@ -515,7 +515,7 @@ setup_stack (void **esp, char *f_name, char *save_ptr)
       sp_copy -= sizeof(char *);
       memcpy((char *) sp_copy, &sentinel, sizeof(char *));
 
-      // push address of arguements
+      /* Pushing arguement's addresses */
       for (int i = argc - 1; i >= 0; i--)
       {
         sp_copy -= sizeof(char *);
@@ -527,11 +527,11 @@ setup_stack (void **esp, char *f_name, char *save_ptr)
       sp_copy -= sizeof(char **);
       memcpy(sp_copy, &start_of_arg_addresses, sizeof(char **)); 
 
-      // push argc
+      /* Pushing argc */ 
       sp_copy -= sizeof(argc);
       memcpy(sp_copy, &argc, sizeof(int));
 
-      // push return address.
+      /* Pushing return address. */
       void *return_address = 0;
       sp_copy -= sizeof(void *);
       memcpy(sp_copy, &return_address, sizeof(void *));
