@@ -42,15 +42,15 @@ syscall_handler (struct intr_frame *f UNUSED)
   {
     exit(-1);
   }
-  int syscall_number = *((int*)esp);
-  esp += sizeof(syscall_number);
+  int *syscall_number = (int*) esp;
+  esp += sizeof(*syscall_number);
 
   int *status;
   int *fd;
-  int *buffer;
+  void *buffer;
   int *length;
 
-  switch (syscall_number) {
+  switch (*syscall_number) {
     case SYS_EXIT:
       status = (int*) esp;
       exit(*status);
@@ -58,23 +58,23 @@ syscall_handler (struct intr_frame *f UNUSED)
     case SYS_READ:
       fd = (int*) esp;
       esp += sizeof(fd);
-      buffer = (int*) esp;
+      buffer = esp;
       esp += sizeof(buffer);
       length = (int*) esp;
       esp += sizeof(length);
-      f->eax = read(*fd, *buffer, *length);
+      f->eax = read(*fd, buffer, *length);
       break;
     case SYS_WRITE:
       fd = (int*) esp;
       esp += sizeof(fd);
-      buffer = (int*) esp;
+      buffer = esp;
       esp += sizeof(buffer);
       length = (int*) esp;
       esp += sizeof(length);
-      f->eax = write(*fd, *buffer, *length);
+      f->eax = write(*fd, buffer, *length);
       break;
     default:
-      printf("This System Call (%d) is not yet supported.\n", syscall_number);
+      printf("This System Call (%d) is not yet supported.\n", *syscall_number);
       thread_exit();
       break;
   }
@@ -102,6 +102,7 @@ read (int fd, void *buffer, unsigned length UNUSED)
   }
 
   /* Null Buffer */
+
   if (buffer == NULL) {
     // printf("Passed A Null Buffer.\n");
     return -1;
@@ -125,7 +126,7 @@ write (int fd, const void *buffer, unsigned length)
     return -1;
   }
 
-  uint8_t *buff = (uint8_t*) buffer;
+  int *buff = (int*) buffer;
 
   /* Null Buffer */
   if (buff == NULL) {
@@ -135,7 +136,7 @@ write (int fd, const void *buffer, unsigned length)
 
   /* Write To STDOUT */
   if (fd == 1) {
-    putbuf((char*)buff, length);
+    putbuf((char*) *buff, length);
     return (int) length;
   }
 
