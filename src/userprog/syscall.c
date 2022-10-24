@@ -37,6 +37,11 @@ syscall_handler (struct intr_frame *f UNUSED)
   }
 
   void *esp = f->esp;
+  // sanity check
+  if (esp >= 0xbffffffc)
+  {
+    exit(-1);
+  }
   int syscall_number = *((int*)esp);
   esp += sizeof(syscall_number);
 
@@ -81,7 +86,6 @@ exit (int status)
   /* Getting current thread */
   struct thread *cur = thread_current();
   // should be in process.
-  if (status < -1) status = -1;
   printf("%s: exit(%d)\n", cur->name, status);
   // cur->status = status;
 
