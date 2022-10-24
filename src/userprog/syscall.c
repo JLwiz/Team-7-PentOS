@@ -38,7 +38,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 
   void *esp = f->esp;
   // sanity check
-  if (esp >= 0xbffffffc)
+  if (esp >= (void*) 0xbffffffc)
   {
     exit(-1);
   }
