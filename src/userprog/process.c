@@ -124,7 +124,7 @@ process_exit (void)
   sema_up(&global_sema);
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
-  printf("%s: exit(%d)\n", cur->name, cur->status);
+  //printf("%s: exit(%d)\n", cur->name, cur->status);
   pd = cur->pagedir;
   if (pd != NULL) 
     {
