@@ -1,0 +1,69 @@
+        	+----------------------------+
+
+   	      |       	  CS 450           |
+
+        	| PROJECT 2: USER PROGRAMS I |
+
+        	|    	DESIGN DOCUMENT	   	   |
+
+        	+----------------------------+
+
+
+
+---- GROUP ----
+>> Fill in the names and email addresses of your group members.
+
+Jacob Lewis <lewisjw@dukes.jmu.edu>
+Andrew Fryer <fryerak@dukes.jmu.edu>
+Patrick Glebus <glebuspm@dukes.jmu.edu>
+Ernest Tussey <tusseyel@dukes.jmu.edu>
+
+---- PRELIMINARIES ----
+
+>> If you have any preliminary comments on your submission, please give
+>> them here.
+
+
+
+>> Please cite any offline or online sources you consulted while
+>> preparing your submission, other than the Pintos documentation, course
+>> text, lecture notes, and course staff.
+
+
+
+                   	   ARGUMENT PASSING
+
+                   	   ================
+
+
+
+---- DATA STRUCTURES ----
+
+>> A1: Copy here the declaration of each new or changed `struct' or
+>> `struct' member, global or static variable, `typedef', or
+>> enumeration.  Identify the purpose of each in 25 words or less.
+struct semaphore global_sema; in process.c
+	-This semaphore is used to synch the main and child processes.
+struct thread* get_thread(tid_t) in thread.h
+	-This function is used to get a thread from a tid_t, which is used in process_wait get the child thread.
+Static unsigned char COMMAND_LINE_LIMIT in process.c
+	-A constant we used for the limit of the amount of bytes for command line arguments.
+
+
+---- ALGORITHMS ----
+
+>> A2: Briefly describe how you implemented argument parsing.  How do
+>> you arrange for the elements of argv[] to be in the right order?
+>> How do you avoid overflowing the stack page?
+The arguments are first divided using strtok_r(). From there these arguments are pushed onto the stack in a reverse order. The addresses, the start of argv[], the argument count (argc), and the return address is pushed onto the stack. In order to avoid overflowing the stack page we boundary check, and if an overflow on the page occurs it will cause the thread to die as a result of the page faulting. 
+
+---- RATIONALE ----
+
+>> A3: Why does Pintos implement strtok_r() but not strtok()?
+strtok_r() is thread safe because the threads manage their entry point with a save pointer rather than common implementations of strtok() that manage the entry location globally. In terms of Pintos, an implementation of strtok() is not safe and not necessarily useful within the scope of an operating system. 
+
+
+>> A4: In Pintos, the kernel separates commands into a executable name
+>> and arguments.  In Unix-like systems, the shell does this
+>> separation.  Identify at least two advantages of the Unix approach.
+Having the shell divide commands in the Unix approach allows more flexibility for Users using different shells rather than the Kernel having to know and make those decisions and if there is a change you have to update the kernel rather than just the shell. Also the kernel should be a location of precision and speed so having the kernel do complex parsing of string commands can be inefficient and error prone.  
