@@ -5,6 +5,7 @@
 #include "threads/interrupt.h"
 #include "threads/thread.h"
 #include "devices/shutdown.h"
+#include "threads/malloc.h"
 
 /**
  *  TODO: Whenever a user process wants to access some kernel functinality,
@@ -29,10 +30,14 @@ void close(int fd);
 static void syscall_handler(struct intr_frame *);
 
 unsigned int next_fd;
+static struct list file_list;
+struct semaphore file_list_semaphore;
 
 void syscall_init(void)
 {
   next_fd = 0;
+  list_init(&file_list);
+  sema_init(&file_list_semaphore, 1);
   intr_register_int(0x30, 3, INTR_ON, syscall_handler, "syscall");
 }
 
@@ -163,7 +168,21 @@ void exit(int status)
 bool create(const char *file, unsigned initial_size)
 {
   // TODO
-  return false;
+  bool success = filesys_create(file, initial_size);
+  unsigned int cur_fd = next_fd;
+  // add to file table
+  if (success)
+  {
+    // someone double check this :)
+    sema_down(&file_list_semaphore);
+    struct file_entry *entry = malloc(sizeof(struct file_entry));
+    entry->fd = cur_fd;
+    entry->file_name = file;
+    list_push_back(&file_list, &entry->elem);
+    sema_up(&file_list_semaphore);
+  }
+  next_fd = next_fd + 1;
+  return success;
 }
 
 /**
@@ -194,7 +213,7 @@ int open(const char *file)
   // TODO
   // needs to be passed an inode?
   // needs to be tested to see if this works.
-  struct file *opened_file = file_open(file);
+  struct file *opened_file = filesys_open(file);
   if (opened_file == NULL) return -1;
   // TODO needs to place it within the list.
   unsigned int cur_fd = next_fd;
@@ -309,3 +328,4 @@ void close(int fd)
   // TODO
   return;
 }
+
