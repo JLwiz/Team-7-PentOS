@@ -29,6 +29,7 @@ unsigned tell(int fd);
 void close(int fd);
 static void syscall_handler(struct intr_frame *);
 
+unsigned int cur_fd;
 unsigned int next_fd;
 static struct list file_list;
 struct semaphore file_list_semaphore;
@@ -167,23 +168,32 @@ void exit(int status)
  */
 bool create(const char *file, unsigned initial_size)
 {
-  // TODO
-  bool success = filesys_create(file, initial_size);
-  unsigned int cur_fd = next_fd;
-  // add to file table
-  if (success)
+  
+  if (strlen(file) > 14) 
   {
-    // someone double check this :)
-    sema_down(&file_list_semaphore);
-    struct file_entry *entry = malloc(sizeof(struct file_entry));
-    entry->fd = cur_fd;
-    entry->file_name = file;
-    list_push_back(&file_list, &entry->elem);
-    sema_up(&file_list_semaphore);
+    printf("NOT DONE YET: FILE NAME TOO LONG\n");
+    thread_exit(); //FIX
   }
-  next_fd = next_fd + 1;
-  return success;
+  bool status = filesys_create(file, initial_size);
+  return status;
 }
+//   // TODO
+//   bool success = filesys_create(file, initial_size);
+//   unsigned int cur_fd = next_fd;
+//   // add to file table
+//   if (success)
+//   {
+//     // someone double check this :)
+//     sema_down(&file_list_semaphore);
+//     struct file_entry *entry = malloc(sizeof(struct file_entry));
+//     entry->fd = cur_fd;
+//     entry->file_name = file;
+//     list_push_back(&file_list, &entry->elem);
+//     sema_up(&file_list_semaphore);
+//   }
+//   next_fd = next_fd + 1;
+//   return success;
+// }
 
 /**
  * @brief Deletes the file called file. Returns true if successful, 
@@ -196,8 +206,8 @@ bool create(const char *file, unsigned initial_size)
  */
 bool remove(const char *file)
 {
-  // TODO
-  return false;
+  bool status = filesys_remove(file);
+  return status;
 }
 
 /**
@@ -214,7 +224,16 @@ int open(const char *file)
   // needs to be passed an inode?
   // needs to be tested to see if this works.
   struct file *opened_file = filesys_open(file);
+  struct thread *cur = thread_current();
+
+
   if (opened_file == NULL) return -1;
+
+  struct file_entry *entry = malloc(sizeof(struct file_entry));
+  entry->fd = cur_fd;
+  entry->file_name = file;
+  hash_insert (&cur->fd_hash, &entry->hash_elem);
+
   // TODO needs to place it within the list.
   unsigned int cur_fd = next_fd;
   next_fd++;
@@ -231,6 +250,12 @@ int filesize(int fd)
 {
   // TODO
   if (fd < 0) return -1;
+  struct file_entry fe;
+  struct hash_elem *e;
+  struct thread *cur = thread_current();
+  e = hash_find(&cur->fd_hash, &fe.fd);
+  fe = hash_entry (e, struct file_entry, hash_elem);
+
   // struct file *file = get_file(fd);
   return ;
 }

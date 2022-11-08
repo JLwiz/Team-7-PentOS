@@ -5,6 +5,7 @@
 #include <list.h>
 #include <stdint.h>
 #include "threads/synch.h"
+#include <hash.h>
 
 /* States in a thread's life cycle. */
 enum thread_status
@@ -90,8 +91,9 @@ struct thread
     uint8_t *stack;                     /* Saved stack pointer. */
     int priority;                       /* Priority. */
     struct list_elem allelem;           /* List element for all threads list. */
-
     
+    struct list_elem file_descriptors;  /* List element for filedescriptor list*/
+    struct hash fd_hash;
     
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
@@ -151,5 +153,15 @@ int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
 
 struct thread* get_thread(tid_t);
+unsigned thread_hash (const struct hash_elem*, void*);
+bool thread_less (const struct hash_elem* , const struct hash_elem*,void* );
+struct file_entry 
+{
+    unsigned int fd;
+    const char *file_name;
+    struct hash_elem hash_elem;
+    struct list_elem allelem;
+    struct list_elem elem;
+};
 
 #endif /* threads/thread.h */

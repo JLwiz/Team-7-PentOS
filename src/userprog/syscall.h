@@ -2,13 +2,13 @@
 #define USERPROG_SYSCALL_H
 #include <list.h>
 
-struct file_entry 
-{
-    unsigned int fd;
-    const char *file_name;
-    struct list_elem allelem;
-    struct list_elem elem;
-};
+// struct file_entry 
+// {
+//     unsigned int fd;
+//     const char *file_name;
+//     struct list_elem allelem;
+//     struct list_elem elem;
+// };
 
 void exit (int status);
 int read (int fd, void *buffer, unsigned length);
