@@ -62,9 +62,24 @@ syscall_handler(struct intr_frame *f UNUSED)
   int *length;
 
   switch (*syscall_number) {
+    case SYS_HALT:
+      halt();
+      break;
     case SYS_EXIT:
       status = (int*) esp;
       exit(*status);
+      break;
+    case SYS_EXEC:
+      break;
+    case SYS_WAIT:
+      break;
+    case SYS_CREATE:
+      break;
+    case SYS_REMOVE:
+      break;
+    case SYS_OPEN:
+      break;
+    case SYS_FILESIZE:
       break;
     case SYS_READ:
       fd = (int*) esp;
@@ -83,6 +98,12 @@ syscall_handler(struct intr_frame *f UNUSED)
       length = (int*) esp;
       esp += sizeof(length);
       f->eax = write(*fd, buffer, *length);
+      break;
+    case SYS_SEEK:
+      break;
+    case SYS_TELL:
+      break;
+    case SYS_CLOSE:
       break;
     default:
       printf("This System Call (%d) is not yet supported.\n", *syscall_number);
