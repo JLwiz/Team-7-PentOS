@@ -48,18 +48,24 @@ syscall_handler(struct intr_frame *f UNUSED)
 
   void *esp = f->esp;
   // sanity check
-  if (esp >= 0xbffffffc)
+  if (esp >= (void*) 0xbffffffc)
   {
     exit(-1);
   }
+<<<<<<< HEAD
   int syscall_number = *((int *)esp);
   esp += sizeof(syscall_number);
+=======
+  int *syscall_number = (int*) esp;
+  esp += sizeof(*syscall_number);
+>>>>>>> 154fe067a8c34d71372c1ef07e7b3e151bf90a5f
 
   int *status;
   int *fd;
-  int *buffer;
+  void *buffer;
   int *length;
 
+<<<<<<< HEAD
   switch (syscall_number)
   {
   case SYS_EXIT:
@@ -88,6 +94,35 @@ syscall_handler(struct intr_frame *f UNUSED)
     printf("This System Call (%d) is not yet supported.\n", syscall_number);
     thread_exit();
     break;
+=======
+  switch (*syscall_number) {
+    case SYS_EXIT:
+      status = (int*) esp;
+      exit(*status);
+      break;
+    case SYS_READ:
+      fd = (int*) esp;
+      esp += sizeof(fd);
+      buffer = esp;
+      esp += sizeof(buffer);
+      length = (int*) esp;
+      esp += sizeof(length);
+      f->eax = read(*fd, buffer, *length);
+      break;
+    case SYS_WRITE:
+      fd = (int*) esp;
+      esp += sizeof(fd);
+      buffer = esp;
+      esp += sizeof(buffer);
+      length = (int*) esp;
+      esp += sizeof(length);
+      f->eax = write(*fd, buffer, *length);
+      break;
+    default:
+      printf("This System Call (%d) is not yet supported.\n", *syscall_number);
+      thread_exit();
+      break;
+>>>>>>> 154fe067a8c34d71372c1ef07e7b3e151bf90a5f
   }
 }
 
@@ -194,8 +229,13 @@ int read(int fd, void *buffer, unsigned length UNUSED)
   }
 
   /* Null Buffer */
+<<<<<<< HEAD
   if (buffer == NULL)
   {
+=======
+
+  if (buffer == NULL) {
+>>>>>>> 154fe067a8c34d71372c1ef07e7b3e151bf90a5f
     // printf("Passed A Null Buffer.\n");
     return -1;
   }
@@ -219,7 +259,11 @@ int write(int fd, const void *buffer, unsigned length)
     return -1;
   }
 
+<<<<<<< HEAD
   uint8_t *buff = (uint8_t *)buffer;
+=======
+  int *buff = (int*) buffer;
+>>>>>>> 154fe067a8c34d71372c1ef07e7b3e151bf90a5f
 
   /* Null Buffer */
   if (buff == NULL)
@@ -229,10 +273,16 @@ int write(int fd, const void *buffer, unsigned length)
   }
 
   /* Write To STDOUT */
+<<<<<<< HEAD
   if (fd == 1)
   {
     putbuf((char *)buff, length);
     return (int)length;
+=======
+  if (fd == 1) {
+    putbuf((char*) *buff, length);
+    return (int) length;
+>>>>>>> 154fe067a8c34d71372c1ef07e7b3e151bf90a5f
   }
 
   /* Writing To File */
