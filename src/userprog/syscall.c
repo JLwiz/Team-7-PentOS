@@ -28,8 +28,11 @@ unsigned tell(int fd);
 void close(int fd);
 static void syscall_handler(struct intr_frame *);
 
+unsigned int next_fd;
+
 void syscall_init(void)
 {
+  next_fd = 0;
   intr_register_int(0x30, 3, INTR_ON, syscall_handler, "syscall");
 }
 
@@ -189,7 +192,14 @@ bool remove(const char *file)
 int open(const char *file)
 {
   // TODO
-  return -1;
+  // needs to be passed an inode?
+  // needs to be tested to see if this works.
+  struct file *opened_file = file_open(file);
+  if (opened_file == NULL) return -1;
+  // TODO needs to place it within the list.
+  unsigned int cur_fd = next_fd;
+  next_fd++;
+  return cur_fd;
 }
 
 /**
@@ -201,7 +211,9 @@ int open(const char *file)
 int filesize(int fd)
 {
   // TODO
-  return -1;
+  if (fd < 0) return -1;
+  // struct file *file = get_file(fd);
+  return ;
 }
 
 int read(int fd, void *buffer, unsigned length UNUSED)
