@@ -4,6 +4,7 @@
 #include "devices/input.h"
 #include "threads/interrupt.h"
 #include "threads/thread.h"
+#include "devices/shutdown.h"
 
 /**
  *  TODO: Whenever a user process wants to access some kernel functinality,
@@ -98,8 +99,7 @@ syscall_handler(struct intr_frame *f UNUSED)
  */
 void halt(void)
 {
-  // TODO
-  return;
+  shutdown_power_off();
 }
 
 void exit(int status)
