@@ -92,7 +92,7 @@ struct thread
     int priority;                       /* Priority. */
     struct list_elem allelem;           /* List element for all threads list. */
     
-    struct list_elem file_descriptors;  /* List element for filedescriptor list*/
+    struct hash_elem file_descriptors;  /* List element for filedescriptor list*/
     struct hash fd_hash;
     
     /* Shared between thread.c and synch.c. */
