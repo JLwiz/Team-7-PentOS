@@ -158,7 +158,7 @@ bool thread_less (const struct hash_elem* , const struct hash_elem*,void* );
 struct file_entry 
 {
     unsigned int fd;
-    const char *file_name;
+    struct file *file;
     struct hash_elem hash_elem;
     struct list_elem allelem;
     struct list_elem elem;
