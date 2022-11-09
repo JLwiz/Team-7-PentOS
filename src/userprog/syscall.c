@@ -225,16 +225,8 @@ int open(const char *file)
   if (opened_file == NULL)
     return -1;
 
-  // dont need to insert, or assign the fd, thats done at creation.
-  // struct file_entry *entry = malloc(sizeof(struct file_entry));
-  // unsigned int cur_fd = next_fd;
-  // next_fd = next_fd + 1;
-  // entry->fd = cur_fd;
-  // entry->file_name = file;
-  // hash_insert(&cur->fd_hash, &entry->hash_elem);
-
   // TODO needs to place it within the list.
-  return -1;
+  return get_fd(file);
 }
 
 /**
@@ -360,7 +352,7 @@ void close(int fd)
  * @param file_name
  * @return unsigned int
  */
-unsigned int get_fd(char *file_name)
+unsigned int get_fd(char *name)
 {
   struct thread *cur = thread_current();
   struct hash_iterator i;
@@ -368,7 +360,11 @@ unsigned int get_fd(char *file_name)
   hash_first(&i, &fd_hash);
   while (hash_next(&i))
   {
-    struct file_entry  *entry = hash_entry(hash_cur(&i), struct file_entry, hash_elem);
+    struct file_entry *cur_entry = hash_entry(hash_cur(&i), struct file_entry, hash_elem);
+    if (strcmp(cur_entry->file_name, name))
+    {
+      return cur_entry->fd;
+    }
   }
   return -1;
 }
