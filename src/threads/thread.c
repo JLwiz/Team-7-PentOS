@@ -193,7 +193,11 @@ tid_t thread_create(const char *name, int priority,
   tid = t->tid = allocate_tid();
 
   // It was referencing t which wasn't initialized.
-  hash_init(&t->fd_hash, thread_hash, thread_less, NULL);
+  // We are not using has it is a pain in the ass.
+  // plus don't want to implement collision avoidance/detection.
+  // hash_init(&t->fd_hash, thread_hash, file_less, NULL);
+  
+  list_init(&t->file_list);
 
   /* Stack frame for kernel_thread(). */
   kf = alloc_frame(t, sizeof *kf);
@@ -603,12 +607,13 @@ unsigned
 thread_hash(const struct hash_elem *p_, void *aux UNUSED)
 {
   const struct file_entry *p = hash_entry(p_, struct file_entry, hash_elem);
-  return hash_bytes(&p->fd, sizeof p->fd);
+  // Has alot of possibilities of collision.
+  return hash_int(&p->fd);
 }
 
 /* Returns true if page a precedes page b. */
-bool thread_less(const struct hash_elem *a_, const struct hash_elem *b_,
-                 void *aux UNUSED)
+bool file_less(const struct hash_elem *a_, const struct hash_elem *b_,
+               void *aux UNUSED)
 {
   const struct file_entry *a = hash_entry(a_, struct file_entry, hash_elem);
   const struct file_entry *b = hash_entry(b_, struct file_entry, hash_elem);

@@ -218,9 +218,13 @@ int open(const char *file)
     lock_release(&file_lock);
     return -1; 
   }
+  struct file_entry *entry = malloc(sizeof(struct file_entry));
   int cur_fd = next_fd;
   next_fd = next_fd + 1;
-
+  entry->file = opened_file;
+  entry->fd = cur_fd;
+  struct list file_list = thread_current()->file_list;
+  list_push_back(&file_list, &entry->elem);
   lock_release(&file_lock);
   // TODO needs to place it within the list.
   return cur_fd;
@@ -315,6 +319,7 @@ int write(int fd, const void *buffer, unsigned length)
 void seek(int fd, unsigned position)
 {
   // TODO
+  unsigned key = hash_int(fd);
   return;
 }
 
@@ -341,4 +346,27 @@ void close(int fd)
 {
   // TODO
   return;
+}
+
+/**
+ * @brief Get the file_entry by fd object, NULL if doesn't exist.
+ * 
+ * @param fd 
+ * @return struct file_entry* 
+ */
+struct file_entry* get_entry_by_fd(int fd)
+{
+  struct list_elem* e;
+  struct list *file_list = &thread_current()->file_list;
+  e = list_head(&file_list);
+  for (e = list_begin (file_list); e != list_end (file_list);
+      e = list_next (e))
+  {
+    struct file_entry *cur = list_entry(e, struct file_entry, elem);
+    if (cur->fd == fd)
+    {
+      return cur;
+    }
+  }
+  return NULL;
 }

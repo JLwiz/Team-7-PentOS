@@ -94,6 +94,8 @@ struct thread
     
     struct hash_elem file_descriptors;  /* List element for filedescriptor list*/
     struct hash fd_hash;
+
+    struct list file_list; /* List of all opened files*/
     
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
