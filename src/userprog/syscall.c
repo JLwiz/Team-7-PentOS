@@ -6,6 +6,7 @@
 #include "threads/thread.h"
 #include "devices/shutdown.h"
 #include "threads/malloc.h"
+#include "kernel/hash.h"
 
 /**
  *  TODO: Whenever a user process wants to access some kernel functinality,
@@ -29,16 +30,13 @@ unsigned tell(int fd);
 void close(int fd);
 static void syscall_handler(struct intr_frame *);
 
-unsigned int cur_fd;
 unsigned int next_fd;
-static struct list file_list;
-struct semaphore file_list_semaphore;
+struct semaphore file_hash_semaphore;
 
 void syscall_init(void)
 {
-  next_fd = 0;
-  list_init(&file_list);
-  sema_init(&file_list_semaphore, 1);
+  next_fd = 2;
+  sema_init(&file_hash_semaphore, 1);
   intr_register_int(0x30, 3, INTR_ON, syscall_handler, "syscall");
 }
 
@@ -168,32 +166,24 @@ void exit(int status)
  */
 bool create(const char *file, unsigned initial_size)
 {
-  
+  struct hash fd_hash = thread_current()->fd_hash;
   if (strlen(file) > 14) 
   {
     printf("NOT DONE YET: FILE NAME TOO LONG\n");
-    thread_exit(); //FIX
+    thread_exit(); //FIX wym???
   }
+  sema_down(&file_hash_semaphore);
   bool status = filesys_create(file, initial_size);
+  struct file_entry *entry = malloc(sizeof(struct file_entry));
+  unsigned int cur_fd = next_fd;
+  next_fd = next_fd + 1;
+  entry->fd = cur_fd;
+  entry->file_name = file;
+  struct hash_elem *sanity = hash_insert(&fd_hash, entry);
+  sema_up(&file_hash_semaphore);
+  if (sanity != NULL) thread_exit();
   return status;
 }
-//   // TODO
-//   bool success = filesys_create(file, initial_size);
-//   unsigned int cur_fd = next_fd;
-//   // add to file table
-//   if (success)
-//   {
-//     // someone double check this :)
-//     sema_down(&file_list_semaphore);
-//     struct file_entry *entry = malloc(sizeof(struct file_entry));
-//     entry->fd = cur_fd;
-//     entry->file_name = file;
-//     list_push_back(&file_list, &entry->elem);
-//     sema_up(&file_list_semaphore);
-//   }
-//   next_fd = next_fd + 1;
-//   return success;
-// }
 
 /**
  * @brief Deletes the file called file. Returns true if successful, 
@@ -230,13 +220,13 @@ int open(const char *file)
   if (opened_file == NULL) return -1;
 
   struct file_entry *entry = malloc(sizeof(struct file_entry));
+  unsigned int cur_fd = next_fd;
+  next_fd = next_fd + 1;
   entry->fd = cur_fd;
   entry->file_name = file;
   hash_insert (&cur->fd_hash, &entry->hash_elem);
 
   // TODO needs to place it within the list.
-  unsigned int cur_fd = next_fd;
-  next_fd++;
   return cur_fd;
 }
 
@@ -250,10 +240,10 @@ int filesize(int fd)
 {
   // TODO
   if (fd < 0) return -1;
-  struct file_entry fe;
+  struct file_entry *fe;
   struct hash_elem *e;
   struct thread *cur = thread_current();
-  e = hash_find(&cur->fd_hash, &fe.fd);
+  e = hash_find(&cur->fd_hash, &fe->fd);
   fe = hash_entry (e, struct file_entry, hash_elem);
 
   // struct file *file = get_file(fd);
