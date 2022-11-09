@@ -157,7 +157,6 @@ void exit(int status)
  */
 bool create(const char *file, unsigned initial_size)
 {
-  struct hash fd_hash = thread_current()->fd_hash;
   if (strlen(file) > 14)
   {
     printf("NOT DONE YET: FILE NAME TOO LONG\n");
@@ -165,12 +164,7 @@ bool create(const char *file, unsigned initial_size)
   }
   while(!lock_try_acquire(&file_lock));
   bool status = filesys_create(file, initial_size);
-  struct file_entry *entry = malloc(sizeof(struct file_entry));
-  unsigned int cur_fd = next_fd;
-  next_fd = next_fd + 1;
-  entry->fd = cur_fd;
-  entry->file_name = file;
-  hash_insert(&fd_hash, &entry->hash_elem);
+  // Don't map here.
   lock_release(&file_lock);
   return status;
 }
@@ -224,9 +218,12 @@ int open(const char *file)
     lock_release(&file_lock);
     return -1; 
   }
+  int cur_fd = next_fd;
+  next_fd = next_fd + 1;
+
   lock_release(&file_lock);
   // TODO needs to place it within the list.
-  return get_fd(file);
+  return cur_fd;
 }
 
 /**
@@ -344,50 +341,4 @@ void close(int fd)
 {
   // TODO
   return;
-}
-
-/**
- * @brief Get the fd for a given file name in the hashtable.
- *
- * @param file_name
- * @return unsigned int
- */
-int get_fd(const char *name)
-{
-  struct thread *cur = thread_current();
-  struct hash_iterator i;
-  struct hash fd_hash = cur->fd_hash;
-  hash_first(&i, &fd_hash);
-  while (hash_next(&i))
-  {
-    struct file_entry *cur_entry = hash_entry(hash_cur(&i), struct file_entry, hash_elem);
-    if (strcmp(cur_entry->file_name, name))
-    {
-      return cur_entry->fd;
-    }
-  }
-  return -1;
-}
-
-/**
- * @brief Get the file_entry by fd in the hashtable.
- * 
- * @param fd 
- * @return struct file_entry* 
- */
-struct file_entry* get_by_fd(int fd)
-{
-  struct thread *cur = thread_current();
-  struct hash_iterator i;
-  struct hash fd_hash = cur->fd_hash;
-  hash_first(&i, &fd_hash);
-  while (hash_next(&i))
-  {
-    struct file_entry *cur_entry = hash_entry(hash_cur(&i), struct file_entry, hash_elem);
-    if (cur_entry->fd == fd)
-    {
-      return cur_entry;
-    }
-  }
-  return NULL;
 }
