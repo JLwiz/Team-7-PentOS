@@ -7,6 +7,9 @@
 #include "devices/shutdown.h"
 #include "threads/malloc.h"
 #include "kernel/hash.h"
+#include "kernel/list.h"
+#include <string.h>
+#include "filesys/filesys.h"
 
 /**
  *  TODO: Whenever a user process wants to access some kernel functinality,
@@ -15,28 +18,15 @@
  *        In the second part of this project you will add code to do everyting
  *        else needed by system calls.
  */
-void halt(void);
-void exit(int status);
-// pid_t exec(const char *cmd_line);
-// int wait(pid_t pid);
-bool create(const char *file, unsigned initial_size);
-bool remove(const char *file);
-int open(const char *file);
-int filesize(int fd);
-int read(int fd, void *buffer, unsigned length);
-int write(int fd, const void *buffer, unsigned length);
-void seek(int fd, unsigned position);
-unsigned tell(int fd);
-void close(int fd);
 static void syscall_handler(struct intr_frame *);
 
 unsigned int next_fd;
-struct semaphore file_hash_semaphore;
+struct lock file_lock;
 
 void syscall_init(void)
 {
   next_fd = 2;
-  sema_init(&file_hash_semaphore, 1);
+  lock_init(&file_lock);
   intr_register_int(0x30, 3, INTR_ON, syscall_handler, "syscall");
 }
 
@@ -173,17 +163,15 @@ bool create(const char *file, unsigned initial_size)
     printf("NOT DONE YET: FILE NAME TOO LONG\n");
     thread_exit(); // FIX wym???
   }
-  sema_down(&file_hash_semaphore);
+  while(!lock_try_acquire(&file_lock));
   bool status = filesys_create(file, initial_size);
   struct file_entry *entry = malloc(sizeof(struct file_entry));
   unsigned int cur_fd = next_fd;
   next_fd = next_fd + 1;
   entry->fd = cur_fd;
   entry->file_name = file;
-  struct hash_elem *sanity = hash_insert(&fd_hash, entry);
-  sema_up(&file_hash_semaphore);
-  if (sanity != NULL)
-    thread_exit();
+  hash_insert(&fd_hash, &entry->hash_elem);
+  lock_release(&file_lock);
   return status;
 }
 
@@ -198,11 +186,18 @@ bool create(const char *file, unsigned initial_size)
  */
 bool remove(const char *file)
 {
+  if (strlen(file) > 14)
+  {
+    printf("NOT DONE YET: FILE NAME TOO LONG\n");
+    return false; // FIX wym???
+  }
+  while(!lock_try_acquire(&file_lock));
   bool success = filesys_remove(file);
   if (success)
   {
     // TODO: needs to remove it from the hash if successful.
   }
+  lock_release(&file_lock);
   return success;
 }
 
@@ -217,14 +212,19 @@ bool remove(const char *file)
 int open(const char *file)
 {
   // TODO
+  // Should fds be assigned on opening or create??????
   // needs to be passed an inode?
   // needs to be tested to see if this works.
+  while(!lock_try_acquire(&file_lock));
   struct file *opened_file = filesys_open(file);
-  struct thread *cur = thread_current();
-
+  // struct thread *cur = thread_current();
   if (opened_file == NULL)
-    return -1;
-
+  {    
+    printf("COULD NOT OPEN FILE: %s\n", file);
+    lock_release(&file_lock);
+    return -1; 
+  }
+  lock_release(&file_lock);
   // TODO needs to place it within the list.
   return get_fd(file);
 }
@@ -240,14 +240,14 @@ int filesize(int fd)
   // TODO
   if (fd < 0)
     return -1;
-  struct file_entry *fe;
-  struct hash_elem *e;
-  struct thread *cur = thread_current();
-  e = hash_find(&cur->fd_hash, &fe->fd);
-  fe = hash_entry(e, struct file_entry, hash_elem);
+  // struct file_entry *fe;
+  // struct hash_elem *e;
+  // struct thread *cur = thread_current();
+  // e = hash_find(&cur->fd_hash, &fe->fd);
+  // fe = hash_entry(e, struct file_entry, hash_elem);
 
   // struct file *file = get_file(fd);
-  return;
+  return -1;
 }
 
 int read(int fd, void *buffer, unsigned length UNUSED)
@@ -352,7 +352,7 @@ void close(int fd)
  * @param file_name
  * @return unsigned int
  */
-unsigned int get_fd(char *name)
+int get_fd(const char *name)
 {
   struct thread *cur = thread_current();
   struct hash_iterator i;
@@ -367,4 +367,27 @@ unsigned int get_fd(char *name)
     }
   }
   return -1;
+}
+
+/**
+ * @brief Get the file_entry by fd in the hashtable.
+ * 
+ * @param fd 
+ * @return struct file_entry* 
+ */
+struct file_entry* get_by_fd(int fd)
+{
+  struct thread *cur = thread_current();
+  struct hash_iterator i;
+  struct hash fd_hash = cur->fd_hash;
+  hash_first(&i, &fd_hash);
+  while (hash_next(&i))
+  {
+    struct file_entry *cur_entry = hash_entry(hash_cur(&i), struct file_entry, hash_elem);
+    if (cur_entry->fd == fd)
+    {
+      return cur_entry;
+    }
+  }
+  return NULL;
 }
