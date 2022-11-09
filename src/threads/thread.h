@@ -161,6 +161,7 @@ struct file_entry
 {
     unsigned int fd;
     struct file *file;
+    const char *file_name;
     struct hash_elem hash_elem;
     struct list_elem allelem;
     struct list_elem elem;
