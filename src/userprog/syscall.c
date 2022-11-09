@@ -222,6 +222,8 @@ int open(const char *file)
   int cur_fd = next_fd;
   next_fd = next_fd + 1;
   entry->file = opened_file;
+  memset(&entry->file_name, 0, sizeof(file));
+  strlcpy(entry->file_name, file, sizeof(file));
   entry->fd = cur_fd;
   struct list file_list = thread_current()->file_list;
   list_push_back(&file_list, &entry->elem);
@@ -333,7 +335,9 @@ void seek(int fd, unsigned position)
 unsigned tell(int fd)
 {
   // TODO
-  return 0;
+  struct file_entry *fe = get_entry_by_fd(fd);
+  if (fe == NULL) return 0;
+  return file_tell(fe->file);
 }
 
 /**
@@ -345,6 +349,12 @@ unsigned tell(int fd)
 void close(int fd)
 {
   // TODO
+  struct file_entry *fe = get_entry_by_fd(fd);
+  if (fe != NULL)
+  {
+    file_close(fe->file);
+    list_remove(&fe->elem);
+  }
   return;
 }
 
