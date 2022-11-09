@@ -189,7 +189,7 @@ bool remove(const char *file)
   bool success = filesys_remove(file);
   if (success)
   {
-    // TODO: needs to remove it from the hash if successful.
+    // TODO: needs to remove it from the list if successful.
   }
   lock_release(&file_lock);
   return success;
@@ -242,10 +242,7 @@ int filesize(int fd)
   if (fd < 0)
     return -1;
   // struct file_entry *fe;
-  // struct hash_elem *e;
-  // struct thread *cur = thread_current();
-  // e = hash_find(&cur->fd_hash, &fe->fd);
-  // fe = hash_entry(e, struct file_entry, hash_elem);
+
 
   // struct file *file = get_file(fd);
   return -1;
@@ -319,8 +316,11 @@ int write(int fd, const void *buffer, unsigned length)
 void seek(int fd, unsigned position)
 {
   // TODO
-  unsigned key = hash_int(fd);
-  return;
+  struct file_entry *fe = get_entry_by_fd(fd);
+  if (fe != NULL)
+  {
+    file_seek(fe->file, position);
+  }
 }
 
 /**
@@ -358,7 +358,7 @@ struct file_entry* get_entry_by_fd(int fd)
 {
   struct list_elem* e;
   struct list *file_list = &thread_current()->file_list;
-  e = list_head(&file_list);
+  e = list_head(file_list);
   for (e = list_begin (file_list); e != list_end (file_list);
       e = list_next (e))
   {
