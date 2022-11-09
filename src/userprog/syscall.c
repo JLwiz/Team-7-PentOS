@@ -224,6 +224,7 @@ int open(const char *file)
 
   if (opened_file == NULL)
     return -1;
+
   // dont need to insert, or assign the fd, thats done at creation.
   // struct file_entry *entry = malloc(sizeof(struct file_entry));
   // unsigned int cur_fd = next_fd;
@@ -233,7 +234,7 @@ int open(const char *file)
   // hash_insert(&cur->fd_hash, &entry->hash_elem);
 
   // TODO needs to place it within the list.
-  return cur_fd;
+  return -1;
 }
 
 /**
@@ -351,4 +352,23 @@ void close(int fd)
 {
   // TODO
   return;
+}
+
+/**
+ * @brief Get the fd for a given file name in the hashtable.
+ *
+ * @param file_name
+ * @return unsigned int
+ */
+unsigned int get_fd(char *file_name)
+{
+  struct thread *cur = thread_current();
+  struct hash_iterator i;
+  struct hash fd_hash = cur->fd_hash;
+  hash_first(&i, &fd_hash);
+  while (hash_next(&i))
+  {
+    struct file_entry  *entry = hash_entry(hash_cur(&i), struct file_entry, hash_elem);
+  }
+  return -1;
 }
