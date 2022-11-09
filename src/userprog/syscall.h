@@ -14,7 +14,7 @@ void seek(int fd, unsigned position);
 unsigned tell(int fd);
 void close(int fd);
 void syscall_init (void);
-int get_fd(const char *name);
+struct file_entry* get_entry_by_fd(int fd);
 
 
 #endif /* userprog/syscall.h */
