@@ -56,11 +56,11 @@ syscall_handler(struct intr_frame *f UNUSED)
 
   void *esp = f->esp;
   // sanity check
-  if (esp >= (void*) 0xbffffffc)
+  if (esp >= (void *)0xbffffffc)
   {
     exit(-1);
   }
-  int *syscall_number = (int*) esp;
+  int *syscall_number = (int *)esp;
   esp += sizeof(*syscall_number);
 
   int *status;
@@ -68,61 +68,62 @@ syscall_handler(struct intr_frame *f UNUSED)
   void *buffer;
   int *length;
 
-  switch (*syscall_number) {
-    case SYS_HALT:
-      halt();
-      break;
-    case SYS_EXIT:
-      status = (int*) esp;
-      exit(*status);
-      break;
-    case SYS_EXEC:
-      break;
-    case SYS_WAIT:
-      break;
-    case SYS_CREATE:
-      break;
-    case SYS_REMOVE:
-      break;
-    case SYS_OPEN:
-      break;
-    case SYS_FILESIZE:
-      break;
-    case SYS_READ:
-      fd = (int*) esp;
-      esp += sizeof(fd);
-      buffer = esp;
-      esp += sizeof(buffer);
-      length = (int*) esp;
-      esp += sizeof(length);
-      f->eax = read(*fd, buffer, *length);
-      break;
-    case SYS_WRITE:
-      fd = (int*) esp;
-      esp += sizeof(fd);
-      buffer = esp;
-      esp += sizeof(buffer);
-      length = (int*) esp;
-      esp += sizeof(length);
-      f->eax = write(*fd, buffer, *length);
-      break;
-    case SYS_SEEK:
-      break;
-    case SYS_TELL:
-      break;
-    case SYS_CLOSE:
-      break;
-    default:
-      printf("This System Call (%d) is not yet supported.\n", *syscall_number);
-      thread_exit();
-      break;
+  switch (*syscall_number)
+  {
+  case SYS_HALT:
+    halt();
+    break;
+  case SYS_EXIT:
+    status = (int *)esp;
+    exit(*status);
+    break;
+  case SYS_EXEC:
+    break;
+  case SYS_WAIT:
+    break;
+  case SYS_CREATE:
+    break;
+  case SYS_REMOVE:
+    break;
+  case SYS_OPEN:
+    break;
+  case SYS_FILESIZE:
+    break;
+  case SYS_READ:
+    fd = (int *)esp;
+    esp += sizeof(fd);
+    buffer = esp;
+    esp += sizeof(buffer);
+    length = (int *)esp;
+    esp += sizeof(length);
+    f->eax = read(*fd, buffer, *length);
+    break;
+  case SYS_WRITE:
+    fd = (int *)esp;
+    esp += sizeof(fd);
+    buffer = esp;
+    esp += sizeof(buffer);
+    length = (int *)esp;
+    esp += sizeof(length);
+    f->eax = write(*fd, buffer, *length);
+    break;
+  case SYS_SEEK:
+    break;
+  case SYS_TELL:
+    break;
+  case SYS_CLOSE:
+    break;
+  default:
+    printf("This System Call (%d) is not yet supported.\n", *syscall_number);
+    thread_exit();
+    break;
   }
 }
 
 /**
- * @brief Terminates Pintos by calling shutdown_power_off() 
- *        (declared in devices/shutdown.h). This should be seldom 
- *        used, because you lose some information about possible 
+ * @brief Terminates Pintos by calling shutdown_power_off()
+ *        (declared in devices/shutdown.h). This should be seldom
+ *        used, because you lose some information about possible
  *        deadlock situations, etc.
  */
 void halt(void)
@@ -156,21 +157,21 @@ void exit(int status)
 /**
  * @brief Creates a new file called file initially initial_size
  *        bytes in size. Returns true if successful, false otherwise.
- *        Creating a new file does not open it: opening the new file 
+ *        Creating a new file does not open it: opening the new file
  *        is a separate operation which would require a open system call.
- * 
- * @param file 
- * @param initial_size 
- * @return true 
- * @return false 
+ *
+ * @param file
+ * @param initial_size
+ * @return true
+ * @return false
  */
 bool create(const char *file, unsigned initial_size)
 {
   struct hash fd_hash = thread_current()->fd_hash;
-  if (strlen(file) > 14) 
+  if (strlen(file) > 14)
   {
     printf("NOT DONE YET: FILE NAME TOO LONG\n");
-    thread_exit(); //FIX wym???
+    thread_exit(); // FIX wym???
   }
   sema_down(&file_hash_semaphore);
   bool status = filesys_create(file, initial_size);
@@ -181,32 +182,37 @@ bool create(const char *file, unsigned initial_size)
   entry->file_name = file;
   struct hash_elem *sanity = hash_insert(&fd_hash, entry);
   sema_up(&file_hash_semaphore);
-  if (sanity != NULL) thread_exit();
+  if (sanity != NULL)
+    thread_exit();
   return status;
 }
 
 /**
- * @brief Deletes the file called file. Returns true if successful, 
- *        false otherwise. A file may be removed regardless of whether 
+ * @brief Deletes the file called file. Returns true if successful,
+ *        false otherwise. A file may be removed regardless of whether
  *        it is open or closed, and removing an open file does not close it.
- * 
- * @param file 
- * @return true 
- * @return false 
+ *
+ * @param file
+ * @return true
+ * @return false
  */
 bool remove(const char *file)
 {
-  bool status = filesys_remove(file);
-  return status;
+  bool success = filesys_remove(file);
+  if (success)
+  {
+    // TODO: needs to remove it from the hash if successful.
+  }
+  return success;
 }
 
 /**
  * @brief Opens the file called file. Returns a nonnegative integer
- *        handle called a "file descriptor" (fd), or -1 if the file 
+ *        handle called a "file descriptor" (fd), or -1 if the file
  *        could not be opened.
- * 
- * @param file 
- * @return int 
+ *
+ * @param file
+ * @return int
  */
 int open(const char *file)
 {
@@ -216,15 +222,15 @@ int open(const char *file)
   struct file *opened_file = filesys_open(file);
   struct thread *cur = thread_current();
 
-
-  if (opened_file == NULL) return -1;
-
-  struct file_entry *entry = malloc(sizeof(struct file_entry));
-  unsigned int cur_fd = next_fd;
-  next_fd = next_fd + 1;
-  entry->fd = cur_fd;
-  entry->file_name = file;
-  hash_insert (&cur->fd_hash, &entry->hash_elem);
+  if (opened_file == NULL)
+    return -1;
+  // dont need to insert, or assign the fd, thats done at creation.
+  // struct file_entry *entry = malloc(sizeof(struct file_entry));
+  // unsigned int cur_fd = next_fd;
+  // next_fd = next_fd + 1;
+  // entry->fd = cur_fd;
+  // entry->file_name = file;
+  // hash_insert(&cur->fd_hash, &entry->hash_elem);
 
   // TODO needs to place it within the list.
   return cur_fd;
@@ -232,22 +238,23 @@ int open(const char *file)
 
 /**
  * @brief Returns the size, in bytes, of the file open as fd.
- * 
- * @param fd 
- * @return int 
+ *
+ * @param fd
+ * @return int
  */
 int filesize(int fd)
 {
   // TODO
-  if (fd < 0) return -1;
+  if (fd < 0)
+    return -1;
   struct file_entry *fe;
   struct hash_elem *e;
   struct thread *cur = thread_current();
   e = hash_find(&cur->fd_hash, &fe->fd);
-  fe = hash_entry (e, struct file_entry, hash_elem);
+  fe = hash_entry(e, struct file_entry, hash_elem);
 
   // struct file *file = get_file(fd);
-  return ;
+  return;
 }
 
 int read(int fd, void *buffer, unsigned length UNUSED)
@@ -261,7 +268,8 @@ int read(int fd, void *buffer, unsigned length UNUSED)
 
   /* Null Buffer */
 
-  if (buffer == NULL) {
+  if (buffer == NULL)
+  {
     // printf("Passed A Null Buffer.\n");
     return -1;
   }
@@ -285,7 +293,7 @@ int write(int fd, const void *buffer, unsigned length)
     return -1;
   }
 
-  int *buff = (int*) buffer;
+  int *buff = (int *)buffer;
 
   /* Null Buffer */
   if (buff == NULL)
@@ -295,9 +303,10 @@ int write(int fd, const void *buffer, unsigned length)
   }
 
   /* Write To STDOUT */
-  if (fd == 1) {
-    putbuf((char*) *buff, length);
-    return (int) length;
+  if (fd == 1)
+  {
+    putbuf((char *)*buff, length);
+    return (int)length;
   }
 
   /* Writing To File */
@@ -306,12 +315,12 @@ int write(int fd, const void *buffer, unsigned length)
 }
 
 /**
- * @brief Changes the next byte to be read or written in open 
- *        file fd to position, expressed in bytes from the beginning 
+ * @brief Changes the next byte to be read or written in open
+ *        file fd to position, expressed in bytes from the beginning
  *        of the file. (Thus, a position of 0 is the file's start.)
- * 
- * @param fd 
- * @param position 
+ *
+ * @param fd
+ * @param position
  */
 void seek(int fd, unsigned position)
 {
@@ -320,11 +329,11 @@ void seek(int fd, unsigned position)
 }
 
 /**
- * @brief Returns the position of the next byte to be read or 
- *        written in open file fd, expressed in bytes from the 
+ * @brief Returns the position of the next byte to be read or
+ *        written in open file fd, expressed in bytes from the
  *        beginning of the file.
- * @param fd 
- * @return unsigned 
+ * @param fd
+ * @return unsigned
  */
 unsigned tell(int fd)
 {
@@ -333,14 +342,13 @@ unsigned tell(int fd)
 }
 
 /**
- * @brief Closes file descriptor fd. Exiting or terminating a process 
- *        implicitly closes all its open file descriptors, as if 
+ * @brief Closes file descriptor fd. Exiting or terminating a process
+ *        implicitly closes all its open file descriptors, as if
  *        by calling this function for each one.
- * @param fd 
+ * @param fd
  */
 void close(int fd)
 {
   // TODO
   return;
 }
-
