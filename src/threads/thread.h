@@ -92,8 +92,8 @@ struct thread
     int priority;                       /* Priority. */
     struct list_elem allelem;           /* List element for all threads list. */
     
-    struct hash_elem file_descriptors;  /* List element for filedescriptor list*/
-    struct hash fd_hash;
+   //  struct hash_elem file_descriptors;  /* List element for filedescriptor list*/
+   //  struct hash fd_hash;
 
     struct list file_list; /* List of all opened files*/
     
@@ -155,13 +155,13 @@ int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
 
 struct thread* get_thread(tid_t);
-unsigned thread_hash (const struct hash_elem*, void*);
-bool thread_less (const struct hash_elem* , const struct hash_elem*,void* );
+// unsigned thread_hash (const struct hash_elem*, void*);
+// bool thread_less (const struct hash_elem* , const struct hash_elem*,void* );
 struct file_entry 
 {
     unsigned int fd;
     struct file *file;
-    const char *file_name;
+    char *file_name;
     struct list_elem allelem;
     struct list_elem elem;
 };

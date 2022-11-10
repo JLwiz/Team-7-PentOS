@@ -10,6 +10,7 @@
 #include "kernel/list.h"
 #include <string.h>
 #include "filesys/filesys.h"
+#include "filesys/file.h"
 
 /**
  *  TODO: Whenever a user process wants to access some kernel functinality,
@@ -222,7 +223,7 @@ int open(const char *file)
   int cur_fd = next_fd;
   next_fd = next_fd + 1;
   entry->file = opened_file;
-  memset(&entry->file_name, 0, sizeof(file));
+  memset(entry->file_name, 0, sizeof(file));
   strlcpy(entry->file_name, file, sizeof(file));
   entry->fd = cur_fd;
   struct list file_list = thread_current()->file_list;
@@ -349,13 +350,15 @@ unsigned tell(int fd)
 void close(int fd)
 {
   // TODO
+  while(!lock_try_acquire(&file_lock));
   struct file_entry *fe = get_entry_by_fd(fd);
   if (fe != NULL)
   {
     file_close(fe->file);
     list_remove(&fe->elem);
+    free(fe);
   }
-  return;
+  lock_release(&file_lock);
 }
 
 /**

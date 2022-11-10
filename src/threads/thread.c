@@ -603,23 +603,23 @@ allocate_tid(void)
   return tid;
 }
 
-unsigned
-thread_hash(const struct hash_elem *p_, void *aux UNUSED)
-{
-  const struct file_entry *p = hash_entry(p_, struct file_entry, hash_elem);
-  // Has alot of possibilities of collision.
-  return hash_int(&p->fd);
-}
+// unsigned
+// thread_hash(const struct hash_elem *p_, void *aux UNUSED)
+// {
+//   const struct file_entry *p = hash_entry(p_, struct file_entry, hash_elem);
+//   // Has alot of possibilities of collision.
+//   return hash_int(&p->fd);
+// }
 
-/* Returns true if page a precedes page b. */
-bool file_less(const struct hash_elem *a_, const struct hash_elem *b_,
-               void *aux UNUSED)
-{
-  const struct file_entry *a = hash_entry(a_, struct file_entry, hash_elem);
-  const struct file_entry *b = hash_entry(b_, struct file_entry, hash_elem);
+// /* Returns true if page a precedes page b. */
+// bool file_less(const struct hash_elem *a_, const struct hash_elem *b_,
+//                void *aux UNUSED)
+// {
+//   const struct file_entry *a = hash_entry(a_, struct file_entry, hash_elem);
+//   const struct file_entry *b = hash_entry(b_, struct file_entry, hash_elem);
 
-  return a->fd < b->fd;
-}
+//   return a->fd < b->fd;
+// }
 
 /* Offset of `stack' member within `struct thread'.
    Used by switch.S, which can't figure it out on its own. */
