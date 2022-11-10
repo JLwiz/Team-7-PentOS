@@ -191,6 +191,9 @@ bool remove(const char *file)
   if (success)
   {
     // TODO: needs to remove it from the list if successful.
+    struct file_entry *fe = get_entry_by_name(file);
+    list_remove(&fe->elem);
+    free(fe);
   }
   lock_release(&file_lock);
   return success;
@@ -206,13 +209,8 @@ bool remove(const char *file)
  */
 int open(const char *file)
 {
-  // TODO
-  // Should fds be assigned on opening or create??????
-  // needs to be passed an inode?
-  // needs to be tested to see if this works.
   while(!lock_try_acquire(&file_lock));
   struct file *opened_file = filesys_open(file);
-  // struct thread *cur = thread_current();
   if (opened_file == NULL)
   {    
     printf("COULD NOT OPEN FILE: %s\n", file);
@@ -229,7 +227,6 @@ int open(const char *file)
   struct list file_list = thread_current()->file_list;
   list_push_back(&file_list, &entry->elem);
   lock_release(&file_lock);
-  // TODO needs to place it within the list.
   return cur_fd;
 }
 
@@ -241,14 +238,13 @@ int open(const char *file)
  */
 int filesize(int fd)
 {
-  // TODO
   if (fd < 0)
     return -1;
-  // struct file_entry *fe;
-
-
-  // struct file *file = get_file(fd);
-  return -1;
+  while(!lock_try_acquire(&file_lock));
+  struct file_entry *fe = get_entry_by_fd(fd);
+  unsigned size = file_length(fe->file);
+  lock_release(&file_lock);
+  return size;
 }
 
 int read(int fd, void *buffer, unsigned length UNUSED)
@@ -318,12 +314,13 @@ int write(int fd, const void *buffer, unsigned length)
  */
 void seek(int fd, unsigned position)
 {
-  // TODO
+  while(!lock_try_acquire(&file_lock));
   struct file_entry *fe = get_entry_by_fd(fd);
   if (fe != NULL)
   {
     file_seek(fe->file, position);
   }
+  lock_release(&file_lock);
 }
 
 /**
@@ -335,10 +332,12 @@ void seek(int fd, unsigned position)
  */
 unsigned tell(int fd)
 {
-  // TODO
+  while(!lock_try_acquire(&file_lock));
   struct file_entry *fe = get_entry_by_fd(fd);
   if (fe == NULL) return 0;
-  return file_tell(fe->file);
+  unsigned offset = file_tell(fe->file);
+  lock_release(&file_lock);
+  return offset;
 }
 
 /**
@@ -349,7 +348,6 @@ unsigned tell(int fd)
  */
 void close(int fd)
 {
-  // TODO
   while(!lock_try_acquire(&file_lock));
   struct file_entry *fe = get_entry_by_fd(fd);
   if (fe != NULL)
@@ -377,6 +375,29 @@ struct file_entry* get_entry_by_fd(int fd)
   {
     struct file_entry *cur = list_entry(e, struct file_entry, elem);
     if (cur->fd == fd)
+    {
+      return cur;
+    }
+  }
+  return NULL;
+}
+
+/**
+ * @brief Get the file_entry by name, NULL if doesn't exist.
+ * 
+ * @param name
+ * @return struct file_entry* 
+ */
+struct file_entry* get_entry_by_name(const char *name)
+{
+  struct list_elem* e;
+  struct list *file_list = &thread_current()->file_list;
+  e = list_head(file_list);
+  for (e = list_begin (file_list); e != list_end (file_list);
+      e = list_next (e))
+  {
+    struct file_entry *cur = list_entry(e, struct file_entry, elem);
+    if (strcmp(cur->file_name, name))
     {
       return cur;
     }

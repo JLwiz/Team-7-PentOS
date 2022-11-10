@@ -15,6 +15,6 @@ unsigned tell(int fd);
 void close(int fd);
 void syscall_init (void);
 struct file_entry* get_entry_by_fd(int fd);
-
+struct file_entry* get_entry_by_name(const char *name);
 
 #endif /* userprog/syscall.h */

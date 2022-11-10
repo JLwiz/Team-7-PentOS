@@ -159,7 +159,7 @@ struct thread* get_thread(tid_t);
 // bool thread_less (const struct hash_elem* , const struct hash_elem*,void* );
 struct file_entry 
 {
-    unsigned int fd;
+    int fd;
     struct file *file;
     char *file_name;
     struct list_elem allelem;
