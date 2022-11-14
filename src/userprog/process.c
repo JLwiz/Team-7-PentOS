@@ -100,14 +100,41 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid UNUSED) 
 {
+  struct thread* cur = thread_current();
   struct thread* child = get_thread(child_tid);
   if (child == NULL)
     return -1;
+
+  if (child->been_waited_on == true) 
+  {
+    return -1;
+  }
+
+  struct list_elem *e;
+  bool child_valid_check = false;
+  for (e = list_begin(&cur->child_thread_list); e != list_end(&cur->child_thread_list);
+       e = list_next(e))
+  {
+    struct thread *t = list_entry(e, struct thread, allelem);
+    if (t->tid == child_tid)
+    {
+      child_valid_check = true;
+      break;
+    }
+  }
+
+
+  if (!child_valid_check) 
+  {
+    return -1;
+  }
+
+
   if (child->status != THREAD_DYING) 
   {
+    child->been_waited_on = true;
     sema_down(&global_sema);
   }
-  
   return child->status;
 }
 

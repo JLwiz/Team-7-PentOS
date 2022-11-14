@@ -19,6 +19,7 @@ enum thread_status
 /* Thread identifier type.
    You can redefine this to whatever type you like. */
 typedef int tid_t;
+typedef int pid_t;
 #define TID_ERROR ((tid_t) -1)          /* Error value for tid_t. */
 
 /* Thread priorities. */
@@ -85,21 +86,29 @@ typedef int tid_t;
 struct thread
   {
     /* Owned by thread.c. */
-    tid_t tid;                          /* Thread identifier. */
+    tid_t tid;
+    pid_t pid;                          /* Thread identifier. */
     enum thread_status status;          /* Thread state. */
     char name[16];                      /* Name (for debugging purposes). */
     uint8_t *stack;                     /* Saved stack pointer. */
     int priority;                       /* Priority. */
     struct list_elem allelem;           /* List element for all threads list. */
+    bool been_waited_on;
     
    //  struct hash_elem file_descriptors;  /* List element for filedescriptor list*/
    //  struct hash fd_hash;
 
     struct list file_list; /* List of all opened files*/
+
+
+    struct list child_thread_list; /* List of all opened files*/
+
     
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
     
+    struct list_elem child_threads;
+
     /* Shared sleeper list */
     struct list_elem sleeper_elem; /* Sleeping threads list */
     

@@ -133,17 +133,21 @@ void exit(int status)
   thread_exit();
 }
 
-// pid_t exec(const char *cmd_line)
-// {
-//   // TODO
-//   return -1;
-// }
+pid_t exec(const char *cmd_line)
+{
+  // TODO
+  tid_t return_pid = process_execute(cmd_line);
+  //Thus, the parent process cannot return from the exec until it knows whether the child process successfully loaded its executable.
+  return return_pid;
+}
 
-// int wait(pid_t pid)
-// {
-//   // TODO
-//   return -1;
-// }
+int wait(pid_t pid)
+{
+  // TODO
+  
+  int status = process_wait((tid_t) pid);
+  return status;
+}
 
 /**
  * @brief Creates a new file called file initially initial_size

@@ -199,6 +199,10 @@ tid_t thread_create(const char *name, int priority,
   
   list_init(&t->file_list);
 
+  list_init(&t->child_thread_list);
+
+  t->been_waited_on = false;
+
   /* Stack frame for kernel_thread(). */
   kf = alloc_frame(t, sizeof *kf);
   kf->eip = NULL;
@@ -470,6 +474,7 @@ get_thread(tid_t tid)
   }
   return NULL;
 }
+
 
 /* Does basic initialization of T as a blocked thread named
    NAME. */
