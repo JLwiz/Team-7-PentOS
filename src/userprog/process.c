@@ -35,7 +35,8 @@ process_execute (const char *file_name)
 {
   char *fn_copy;
   tid_t tid;
-  sema_init(&global_sema, 1);
+  sema_init(&global_sema, 1); //change these
+  struct thread* cur = thread_current();
 
   /* Make a copy of FILE_NAME.
      Otherwise there's a race between the caller and load(). */
@@ -47,10 +48,13 @@ process_execute (const char *file_name)
 
   tid = thread_create (fn_copy, PRI_DEFAULT, start_process, fn_copy);
 
+  struct thread* child = get_thread(tid); //Probably not right
+
   if (tid == TID_ERROR) {
     palloc_free_page (fn_copy);
   }
-  sema_down(&global_sema);
+  list_push_back(&cur->child_thread_list,  &child->child_threads); //Seems incorrect
+  sema_down(&global_sema); // change these
   return tid;
 }
 
@@ -100,31 +104,29 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid UNUSED) 
 {
-  struct thread* cur = thread_current();
-  struct thread* child = get_thread(child_tid);
-  if (child == NULL)
-    return -1;
-
-  if (child->been_waited_on == true) 
-  {
-    return -1;
-  }
+  struct thread* cur = thread_current(); //Get cur
+  struct thread* child = NULL;
+  
 
   struct list_elem *e;
   bool child_valid_check = false;
   for (e = list_begin(&cur->child_thread_list); e != list_end(&cur->child_thread_list);
        e = list_next(e))
   {
-    struct thread *t = list_entry(e, struct thread, allelem);
-    if (t->tid == child_tid)
+    struct thread *child_in_list = list_entry(e, struct thread, allelem);
+    if (child_in_list->tid == child_tid)
     {
-      child_valid_check = true;
+      child = child_in_list;
       break;
     }
   }
 
+  if (child == NULL) 
+  {
+    return -1;
+  }
 
-  if (!child_valid_check) 
+   if (child->been_waited_on == true) 
   {
     return -1;
   }

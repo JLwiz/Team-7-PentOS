@@ -274,6 +274,14 @@ int read(int fd, void *buffer, unsigned length UNUSED)
     return input_getc();
   }
 
+  if (fd > 0)
+  {
+    struct file_entry *fe = get_entry_by_fd(fd);
+    int bytes_read = file_read(fe->file, buffer, 0);
+    return bytes_read;
+  }
+  
+
   /* Reading From File */
   // printf("Reading from anything but STDIN not yet implemented.\n");
   return -1;
@@ -301,6 +309,13 @@ int write(int fd, const void *buffer, unsigned length)
   {
     putbuf((char *)*buff, length);
     return (int)length;
+  }
+
+  if (fd > 0)
+  {
+    struct file_entry *fe = get_entry_by_fd(fd);
+    int bytes_write = file_write(fe->file, buffer, 0);
+    return bytes_write;
   }
 
   /* Writing To File */
