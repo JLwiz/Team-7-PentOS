@@ -61,6 +61,7 @@ syscall_handler(struct intr_frame *f UNUSED)
   int *fd;
   void *buffer;
   int *length;
+  pid_t *pid;
 
   switch (*syscall_number)
   {
@@ -78,7 +79,7 @@ syscall_handler(struct intr_frame *f UNUSED)
     f->eax = exec(buffer);
     break;
   case SYS_WAIT:
-    pid_t *pid = (pid_t *)esp;
+    pid = (pid_t *)esp;
     esp += sizeof(pid);
     f->eax = wait(*pid);
     break;
@@ -170,6 +171,7 @@ void exit(int status)
 {
   /* Getting current thread */
   struct thread *cur = thread_current();
+  // TODO: needs to exit the child thread instead of cur thread.
   // should be in process.
   printf("%s: exit(%d)\n", cur->name, status);
   // cur->status = status;
