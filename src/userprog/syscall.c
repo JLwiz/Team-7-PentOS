@@ -129,7 +129,7 @@ syscall_handler(struct intr_frame *f UNUSED)
     esp += sizeof(fd);
     unsigned *pos = (unsigned*) esp;
     esp += sizeof(pos);
-    //f->eax = seek(*fd, *pos); seek has no return value
+    // f->eax = seek(*fd, *pos); seek has no return value
     seek(*fd, *pos);
     break;
   case SYS_TELL:
@@ -141,7 +141,7 @@ syscall_handler(struct intr_frame *f UNUSED)
     fd = (int *)esp;
     esp += sizeof(fd);
     close(*fd);
-    //f->eax = close(*fd); close has no return value
+    // f->eax = close(*fd); close has no return value
     break;
   default:
     printf("This System Call (%d) is not yet supported.\n", *syscall_number);
@@ -177,13 +177,13 @@ pid_t exec(const char *cmd_line)
 {
   // TODO
   tid_t return_pid = process_execute(cmd_line);
-  //Thus, the parent process cannot return from the exec until it knows whether the child process successfully loaded its executable.
+  // Thus, the parent process cannot return from the exec until it knows whether the child process successfully loaded its executable.
   return return_pid;
 }
 
 int wait(pid_t pid)
 {
-  return process_wait((tid_t) pid);
+  return process_wait((tid_t)pid);
 }
 
 /**
@@ -204,7 +204,8 @@ bool create(const char *file, unsigned initial_size)
     printf("NOT DONE YET: FILE NAME TOO LONG\n");
     thread_exit(); // FIX wym???
   }
-  while(!lock_try_acquire(&file_lock));
+  while (!lock_try_acquire(&file_lock))
+    ;
   bool status = filesys_create(file, initial_size);
   // Don't map here.
   lock_release(&file_lock);
@@ -227,7 +228,8 @@ bool remove(const char *file)
     printf("NOT DONE YET: FILE NAME TOO LONG\n");
     return false; // FIX wym???
   }
-  while(!lock_try_acquire(&file_lock));
+  while (!lock_try_acquire(&file_lock))
+    ;
   bool success = filesys_remove(file);
   if (success)
   {
@@ -250,13 +252,14 @@ bool remove(const char *file)
  */
 int open(const char *file)
 {
-  while(!lock_try_acquire(&file_lock));
+  while (!lock_try_acquire(&file_lock))
+    ;
   struct file *opened_file = filesys_open(file);
   if (opened_file == NULL)
-  {    
+  {
     printf("COULD NOT OPEN FILE: %s\n", file);
     lock_release(&file_lock);
-    return -1; 
+    return -1;
   }
   struct file_entry *entry = malloc(sizeof(struct file_entry));
   int cur_fd = next_fd;
@@ -281,7 +284,8 @@ int filesize(int fd)
 {
   if (fd < 0)
     return -1;
-  while(!lock_try_acquire(&file_lock));
+  while (!lock_try_acquire(&file_lock))
+    ;
   struct file_entry *fe = get_entry_by_fd(fd);
   unsigned size = file_length(fe->file);
   lock_release(&file_lock);
@@ -317,7 +321,6 @@ int read(int fd, void *buffer, unsigned length UNUSED)
     int bytes_read = file_read(fe->file, buffer, 0);
     return bytes_read;
   }
-  
 
   /* Reading From File */
   // printf("Reading from anything but STDIN not yet implemented.\n");
@@ -370,7 +373,8 @@ int write(int fd, const void *buffer, unsigned length)
  */
 void seek(int fd, unsigned position)
 {
-  while(!lock_try_acquire(&file_lock));
+  while (!lock_try_acquire(&file_lock))
+    ;
   struct file_entry *fe = get_entry_by_fd(fd);
   if (fe != NULL)
   {
@@ -388,9 +392,11 @@ void seek(int fd, unsigned position)
  */
 unsigned tell(int fd)
 {
-  while(!lock_try_acquire(&file_lock));
+  while (!lock_try_acquire(&file_lock))
+    ;
   struct file_entry *fe = get_entry_by_fd(fd);
-  if (fe == NULL) return 0;
+  if (fe == NULL)
+    return 0;
   unsigned offset = file_tell(fe->file);
   lock_release(&file_lock);
   return offset;
@@ -404,7 +410,8 @@ unsigned tell(int fd)
  */
 void close(int fd)
 {
-  while(!lock_try_acquire(&file_lock));
+  while (!lock_try_acquire(&file_lock))
+    ;
   struct file_entry *fe = get_entry_by_fd(fd);
   if (fe != NULL)
   {
@@ -417,17 +424,17 @@ void close(int fd)
 
 /**
  * @brief Get the file_entry by fd object, NULL if doesn't exist.
- * 
- * @param fd 
- * @return struct file_entry* 
+ *
+ * @param fd
+ * @return struct file_entry*
  */
-struct file_entry* get_entry_by_fd(int fd)
+struct file_entry *get_entry_by_fd(int fd)
 {
-  struct list_elem* e;
+  struct list_elem *e;
   struct list *file_list = &thread_current()->file_list;
   e = list_head(file_list);
-  for (e = list_begin (file_list); e != list_end (file_list);
-      e = list_next (e))
+  for (e = list_begin(file_list); e != list_end(file_list);
+       e = list_next(e))
   {
     struct file_entry *cur = list_entry(e, struct file_entry, elem);
     if (cur->fd == fd)
@@ -440,17 +447,17 @@ struct file_entry* get_entry_by_fd(int fd)
 
 /**
  * @brief Get the file_entry by name, NULL if doesn't exist.
- * 
+ *
  * @param name
- * @return struct file_entry* 
+ * @return struct file_entry*
  */
-struct file_entry* get_entry_by_name(const char *name)
+struct file_entry *get_entry_by_name(const char *name)
 {
-  struct list_elem* e;
+  struct list_elem *e;
   struct list *file_list = &thread_current()->file_list;
   e = list_head(file_list);
-  for (e = list_begin (file_list); e != list_end (file_list);
-      e = list_next (e))
+  for (e = list_begin(file_list); e != list_end(file_list);
+       e = list_next(e))
   {
     struct file_entry *cur = list_entry(e, struct file_entry, elem);
     if (strcmp(cur->file_name, name))

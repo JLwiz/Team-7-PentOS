@@ -20,7 +20,7 @@
 #include "threads/vaddr.h"
 
 
-struct semaphore global_sema;
+// struct semaphore global_sema;
 
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
@@ -35,9 +35,8 @@ process_execute (const char *file_name)
 {
   char *fn_copy;
   tid_t tid;
-  sema_init(&global_sema, 1); //change these
   struct thread* cur = thread_current();
-
+  // sema_init(&cur->process_sema, 1); //change these
   /* Make a copy of FILE_NAME.
      Otherwise there's a race between the caller and load(). */
   fn_copy = palloc_get_page (0);
@@ -54,7 +53,7 @@ process_execute (const char *file_name)
     palloc_free_page (fn_copy);
   }
   list_push_back(&cur->child_thread_list,  &child->child_threads); //Seems incorrect
-  sema_down(&global_sema); // change these
+  sema_down(&cur->process_sema); // change these
   return tid;
 }
 
@@ -66,14 +65,14 @@ start_process (void *file_name_)
   char *file_name = file_name_;
   struct intr_frame if_;
   bool success;
-
+  struct thread *cur = thread_current();
   /* Initialize interrupt frame and load executable. */
   memset (&if_, 0, sizeof if_);
   if_.gs = if_.fs = if_.es = if_.ds = if_.ss = SEL_UDSEG;
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
   success = load (file_name, &if_.eip, &if_.esp);
-  sema_up(&global_sema);
+  sema_up(&cur->process_sema);
 
  
   /* If load failed, quit. */
@@ -135,7 +134,7 @@ process_wait (tid_t child_tid UNUSED)
   if (child->status != THREAD_DYING) 
   {
     child->been_waited_on = true;
-    sema_down(&global_sema);
+    sema_down(&cur->process_sema);
   }
   return child->status;
 }
@@ -146,7 +145,7 @@ process_exit (void)
 {
   struct thread *cur = thread_current ();
   uint32_t *pd;
-  sema_up(&global_sema);
+  sema_up(&cur->process_sema);
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
   pd = cur->pagedir;
