@@ -114,6 +114,8 @@ struct thread
     
     /* amount of ticks till woken */
     int64_t ticks_left;
+
+    struct semaphore process_sema;
     
 #ifdef USERPROG
     /* Owned by userprog/process.c. */

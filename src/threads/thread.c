@@ -105,7 +105,6 @@ void thread_init(void)
   list_init(&ready_list);
   list_init(&all_list);
   list_init(&sleeper_list);
-
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread();
   init_thread(initial_thread, "main", PRI_DEFAULT);
@@ -200,7 +199,7 @@ tid_t thread_create(const char *name, int priority,
   list_init(&t->file_list);
 
   list_init(&t->child_thread_list);
-
+  sema_init(&t->process_sema, 1);
   t->been_waited_on = false;
 
   /* Stack frame for kernel_thread(). */
