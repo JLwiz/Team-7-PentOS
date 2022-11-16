@@ -12,6 +12,9 @@
 #include "filesys/filesys.h"
 #include "filesys/file.h"
 
+#define STDIN_FILENO 0
+#define STDOUT_FILENO 1
+
 /**
  *  TODO: Whenever a user process wants to access some kernel functinality,
  *        it invokes a system call. This is a skeleton system call handler.
@@ -69,16 +72,44 @@ syscall_handler(struct intr_frame *f UNUSED)
     exit(*status);
     break;
   case SYS_EXEC:
+    esp += sizeof(buffer);
+    length = (int *)esp;
+    esp += sizeof(length);
+    f->eax = exec(buffer);
     break;
   case SYS_WAIT:
+    pid_t *pid = (pid_t *)esp;
+    esp += sizeof(pid);
+    f->eax = wait(*pid);
     break;
   case SYS_CREATE:
+    esp += sizeof(buffer);
+    length = (int *)esp;
+    esp += sizeof(length);
+    unsigned *int_size = esp;
+    esp += sizeof(int_size);
+    f->eax = create(buffer, int_size);
     break;
   case SYS_REMOVE:
+    buffer = esp;
+    esp += sizeof(buffer);
+    length = (int *)esp;
+    esp += sizeof(length);
+    // boolean is an int
+    f->eax = remove(buffer);
     break;
   case SYS_OPEN:
+    buffer = esp;
+    esp += sizeof(buffer);
+    length = (int *)esp;
+    esp += sizeof(length);
+    fd = &open(buffer);
+    f->eax = fd;
     break;
   case SYS_FILESIZE:
+    fd = (int *)esp;
+    esp += sizeof(fd);
+    f->eax = filesize(*fd);
     break;
   case SYS_READ:
     fd = (int *)esp;
@@ -99,10 +130,21 @@ syscall_handler(struct intr_frame *f UNUSED)
     f->eax = write(*fd, buffer, *length);
     break;
   case SYS_SEEK:
+    fd = (int *)esp;
+    esp += sizeof(fd);
+    unsigned *pos = esp;
+    esp += sizeof(pos);
+    f->eax = seek(*fd, *pos);
     break;
   case SYS_TELL:
+    fd = (int *)esp;
+    esp += sizeof(fd);
+    f->eax = tell(*fd)
     break;
   case SYS_CLOSE:
+    fd = (int *)esp;
+    esp += sizeof(fd);
+    f->eax = close(*fd);
     break;
   default:
     printf("This System Call (%d) is not yet supported.\n", *syscall_number);
@@ -143,10 +185,7 @@ pid_t exec(const char *cmd_line)
 
 int wait(pid_t pid)
 {
-  // TODO
-  
-  int status = process_wait((tid_t) pid);
-  return status;
+  return process_wait((tid_t) pid);
 }
 
 /**
