@@ -134,17 +134,19 @@ syscall_handler(struct intr_frame *f UNUSED)
     esp += sizeof(fd);
     unsigned *pos = esp;
     esp += sizeof(pos);
-    f->eax = seek(*fd, *pos);
+    //f->eax = seek(*fd, *pos);
+    seek(*fd, *pos);
     break;
   case SYS_TELL:
     fd = (int *)esp;
     esp += sizeof(fd);
-    f->eax = tell(*fd)
+    f->eax = tell(*fd);
     break;
   case SYS_CLOSE:
     fd = (int *)esp;
     esp += sizeof(fd);
-    f->eax = close(*fd);
+    close(*fd);
+    //f->eax = close(*fd);
     break;
   default:
     printf("This System Call (%d) is not yet supported.\n", *syscall_number);
