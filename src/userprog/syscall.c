@@ -1,4 +1,5 @@
 #include "userprog/syscall.h"
+#include "userprog/process.h"
 #include <stdio.h>
 #include <syscall-nr.h>
 #include "devices/input.h"
@@ -73,9 +74,8 @@ syscall_handler(struct intr_frame *f UNUSED)
     exit(*status);
     break;
   case SYS_EXEC:
+    buffer = esp;
     esp += sizeof(buffer);
-    length = (int *)esp;
-    esp += sizeof(length);
     f->eax = exec(buffer);
     break;
   case SYS_WAIT:
@@ -84,28 +84,22 @@ syscall_handler(struct intr_frame *f UNUSED)
     f->eax = wait(*pid);
     break;
   case SYS_CREATE:
+    buffer = esp;
     esp += sizeof(buffer);
-    length = (int *)esp;
-    esp += sizeof(length);
-    unsigned *int_size = esp;
+    unsigned *int_size = (unsigned*) esp;
     esp += sizeof(int_size);
-    f->eax = create(buffer, int_size);
+    f->eax = create(buffer, *int_size);
     break;
   case SYS_REMOVE:
     buffer = esp;
     esp += sizeof(buffer);
-    length = (int *)esp;
-    esp += sizeof(length);
-    // boolean is an int
     f->eax = remove(buffer);
     break;
   case SYS_OPEN:
     buffer = esp;
     esp += sizeof(buffer);
-    length = (int *)esp;
-    esp += sizeof(length);
-    fd = open(buffer);
-    f->eax = fd;
+    fd = (int*) open(buffer);
+    f->eax = *fd;
     break;
   case SYS_FILESIZE:
     fd = (int *)esp;
@@ -133,7 +127,7 @@ syscall_handler(struct intr_frame *f UNUSED)
   case SYS_SEEK:
     fd = (int *)esp;
     esp += sizeof(fd);
-    unsigned *pos = esp;
+    unsigned *pos = (unsigned*) esp;
     esp += sizeof(pos);
     //f->eax = seek(*fd, *pos); seek has no return value
     seek(*fd, *pos);
