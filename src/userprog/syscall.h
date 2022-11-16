@@ -1,6 +1,7 @@
 #ifndef USERPROG_SYSCALL_H
 #define USERPROG_SYSCALL_H
 #include <list.h>
+#include "threads/thread.h"
 
 void halt(void);
 bool create(const char *file, unsigned initial_size);
@@ -11,6 +12,8 @@ int filesize(int fd);
 int read (int fd, void *buffer, unsigned length);
 int write (int fd, const void *buffer, unsigned length);
 void seek(int fd, unsigned position);
+pid_t exec(const char*);
+int wait(pid_t);
 unsigned tell(int fd);
 void close(int fd);
 void syscall_init (void);
