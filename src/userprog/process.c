@@ -152,6 +152,7 @@ process_wait (tid_t child_tid UNUSED)
 void
 process_exit (void)
 {
+  printf("---------------Entering Process Exit---------------\n");
   struct thread *cur = thread_current ();
   uint32_t *pd;
   struct child_t *child = NULL;
@@ -185,6 +186,7 @@ process_exit (void)
       pagedir_activate (NULL);
       pagedir_destroy (pd);
     }
+    printf("---------------Exiting Process Exit---------------\n");
 }
 
 /* Sets up the CPU for running user code in the current
