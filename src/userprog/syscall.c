@@ -373,7 +373,10 @@ int read(int fd, void *buffer, unsigned length)
   {
     struct file_entry *fe = get_entry_by_fd(fd);
     if (fe == NULL) return -1;
+<<<<<<< HEAD
     if (filesize(fd) > (int) length) return -1;
+=======
+>>>>>>> 64d2bdfa554cd6f748b82290fc731820cb902f88
     int bytes_read = file_read(fe->file, buffer, length);
     return bytes_read;
   }
