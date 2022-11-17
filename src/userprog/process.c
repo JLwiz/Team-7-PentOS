@@ -56,16 +56,12 @@ process_execute (const char *file_name)
   else 
   {
     struct list child_list = parent->file_list;
-    printf("CHILD LIST\n");
-    printf("%d", child_list);
-    printf("\n");
     child = malloc(sizeof (*child));
     if (child == NULL) return -1;
     child->child_tid = tid;
     child->exit = false;
     child->waited_once = false;
     list_push_front(&child_list,  &child->elem);
-    printf("after\n");
   }
  // change these
   return tid;
