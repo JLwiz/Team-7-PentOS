@@ -66,6 +66,7 @@ syscall_handler(struct intr_frame *f UNUSED)
   void *buffer;
   int *length;
   pid_t *pid;
+  char *filename;
 
   switch (*syscall_number)
   {
@@ -87,21 +88,21 @@ syscall_handler(struct intr_frame *f UNUSED)
     f->eax = wait(*pid);
     break;
   case SYS_CREATE:
-    buffer = esp;
-    esp += sizeof(buffer);
+    filename = *(char**) esp;
+    esp += sizeof(filename);
     unsigned *int_size = (unsigned*) esp;
     esp += sizeof(int_size);
-    f->eax = create(buffer, *int_size);
+    f->eax = create(filename, *int_size);
     break;
   case SYS_REMOVE:
-    buffer = esp;
-    esp += sizeof(buffer);
-    f->eax = remove(buffer);
+    filename = *(char**) esp;
+    esp += sizeof(filename);
+    f->eax = remove(filename);
     break;
   case SYS_OPEN:
-    buffer = esp;
-    esp += sizeof(buffer);
-    fd = (int*) open(buffer);
+    filename = *(char**) esp;
+    esp += sizeof(filename);
+    fd = (int*) open(filename);
     f->eax = *fd;
     break;
   case SYS_FILESIZE:
