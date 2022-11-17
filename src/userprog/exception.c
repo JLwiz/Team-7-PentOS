@@ -151,13 +151,17 @@ page_fault (struct intr_frame *f)
 
   if (user) 
   {
-   //struct thread* cur = thread_current();
+   struct thread* cur = thread_current();
    if (write) 
    {
-      printf("Write fail\n");
+      //printf("Write fail\n");
+      process_exit();
+      exit(-1);
    } else 
    {
-      printf("Read fail\n");
+      //printf("Read fail\n");
+      process_exit();
+      exit(-1);
    }
   } 
   else 
@@ -165,6 +169,7 @@ page_fault (struct intr_frame *f)
    //printf("Kernel process\n");
    f->eip = (void*)f->eax;
    f->eax = 0xffffffff;
+   //thread_exit();
    exit(-1);
 
   }
