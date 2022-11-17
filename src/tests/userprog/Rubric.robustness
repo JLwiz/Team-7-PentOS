@@ -1,43 +1,48 @@
 Robustness of system calls:
 - Test robustness of file descriptor handling.
+2	close-stdin
+2	close-stdout
+2	close-bad-fd
+2	close-twice
 2	read-bad-fd
 2	read-stdout
 2	write-bad-fd
 2	write-stdin
+2	multi-child-fd
 
 - Test robustness of pointer handling.
-0	create-bad-ptr
-0	exec-bad-ptr
-0	open-bad-ptr
-0	read-bad-ptr
-0	write-bad-ptr
+3	create-bad-ptr
+3	exec-bad-ptr
+3	open-bad-ptr
+3	read-bad-ptr
+3	write-bad-ptr
 
 - Test robustness of buffer copying across page boundaries.
-0	create-bound
-0	open-boundary
-0	read-boundary
-0	write-boundary
+3	create-bound
+3	open-boundary
+3	read-boundary
+3	write-boundary
 
 - Test handling of null pointer and empty strings.
-0	create-null
-0	open-null
-0	open-empty
+2	create-null
+2	open-null
+2	open-empty
 
 - Test robustness of system call implementation.
 3	sc-bad-arg
-0	sc-bad-sp
+3	sc-bad-sp
 5	sc-boundary
 5	sc-boundary-2
 
 - Test robustness of "exec" and "wait" system calls.
-0	exec-missing
-0	wait-bad-pid
-0	wait-killed
+5	exec-missing
+5	wait-bad-pid
+5	wait-killed
 
 - Test robustness of exception handling.
-0	bad-read
-0	bad-write
-0	bad-jump
-0	bad-read2
-0	bad-write2
-0	bad-jump2
+1	bad-read
+1	bad-write
+1	bad-jump
+1	bad-read2
+1	bad-write2
+1	bad-jump2
