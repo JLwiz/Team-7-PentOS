@@ -114,6 +114,7 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid UNUSED) 
 {
+  printf("---------------Entering Process Wait---------------\n");
   struct thread *parent = thread_current(); //Get cur
   struct child_t *child = NULL;
 
@@ -144,7 +145,7 @@ process_wait (tid_t child_tid UNUSED)
   child->waited_once = true;
   list_remove(e);
   return status;
-
+  printf("---------------Exiting Process Wait---------------\n");
 }
 
 /* Free the current process's resources. */
