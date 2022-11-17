@@ -170,12 +170,13 @@ void halt(void)
 void exit(int status)
 {
   // printf("---------------Entering Syscall Exit---------------\n");
-  /* Getting current thread */
   struct thread *cur = thread_current();
+  /* Getting current thread */
   // TODO: needs to exit the child thread instead of cur thread.
   // should be in process.
   printf("%s: exit(%d)\n", cur->name, status);
-  cur->status = status;
+  // if (status > 0) thread_exit();
+  // cur->parent->status = status;
   // printf("---------------Exiting Syscall Exit---------------\n");
   thread_exit();
 }
@@ -308,9 +309,7 @@ int filesize(int fd)
 
 int read(int fd, void *buffer, unsigned length UNUSED)
 {
-  // printf("made it to read\n");
   /* Invalid File Descriptor */
-  if (fd >= INT_MAX || fd <= INT_MIN) return -1;
   if (fd < 0)
   {
     // printf("Passed Invalid File Descriptor.\n");
