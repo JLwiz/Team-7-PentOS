@@ -129,7 +129,18 @@ process_wait (tid_t child_tid UNUSED)
       break;
     }
   }
-
+  printf("Process wait for loop done\n");  
+  if (child == NULL)
+  {
+    printf("Child is NULL retard.\n");
+  }
+  else
+  {
+      printf("Child tid: %d\n", child->child_tid);
+      printf("Exit bool: %d\n", child->exit);
+      printf("Waited once: %d\n", child->waited_once);
+      printf("Child tid: %d\n", child->exit);
+  }
   if (child == NULL) 
   {
     return -1;
