@@ -103,6 +103,7 @@ struct thread
 
     struct list child_list; /* List of all opened files*/
 
+    struct lock file_lock; /*lock used for syscalls*/
     
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */

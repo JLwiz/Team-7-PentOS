@@ -26,12 +26,12 @@
 static void syscall_handler(struct intr_frame *);
 
 unsigned int next_fd;
-struct lock file_lock;
+// struct lock file_lock;
 
 void syscall_init(void)
 {
   next_fd = 2;
-  lock_init(&file_lock);
+  // lock_init(&cur->file_lock);
   intr_register_int(0x30, 3, INTR_ON, syscall_handler, "syscall");
 }
 
@@ -204,11 +204,11 @@ bool create(const char *file, unsigned initial_size)
     printf("NOT DONE YET: FILE NAME TOO LONG\n");
     thread_exit(); // FIX wym???
   }
-  while (!lock_try_acquire(&file_lock))
-    ;
+  struct thread *cur = thread_current();
+  while (!lock_try_acquire(&cur->file_lock));
   bool status = filesys_create(file, initial_size);
   // Don't map here.
-  lock_release(&file_lock);
+  lock_release(&cur->file_lock);
   return status;
 }
 
@@ -228,8 +228,8 @@ bool remove(const char *file)
     printf("NOT DONE YET: FILE NAME TOO LONG\n");
     return false; // FIX wym???
   }
-  while (!lock_try_acquire(&file_lock))
-    ;
+  struct thread *cur = thread_current();
+  while (!lock_try_acquire(&cur->file_lock));
   bool success = filesys_remove(file);
   if (success)
   {
@@ -238,7 +238,7 @@ bool remove(const char *file)
     list_remove(&fe->elem);
     free(fe);
   }
-  lock_release(&file_lock);
+  lock_release(&cur->file_lock);
   return success;
 }
 
@@ -252,13 +252,13 @@ bool remove(const char *file)
  */
 int open(const char *file)
 {
-  while (!lock_try_acquire(&file_lock))
-    ;
+  struct thread *cur = thread_current();
+  while (!lock_try_acquire(&cur->file_lock));
   struct file *opened_file = filesys_open(file);
   if (opened_file == NULL)
   {
     printf("COULD NOT OPEN FILE: %s\n", file);
-    lock_release(&file_lock);
+    lock_release(&cur->file_lock);
     return -1;
   }
   struct file_entry *entry = malloc(sizeof(struct file_entry));
@@ -269,8 +269,8 @@ int open(const char *file)
   strlcpy(entry->file_name, file, sizeof(file));
   entry->fd = cur_fd;
   struct list file_list = thread_current()->file_list;
-  list_push_back(&file_list, &entry->elem);
-  lock_release(&file_lock);
+  list_push_back(&cur->file_list, &entry->elem);
+  lock_release(&cur->file_lock);
   return cur_fd;
 }
 
@@ -284,11 +284,11 @@ int filesize(int fd)
 {
   if (fd < 0)
     return -1;
-  while (!lock_try_acquire(&file_lock))
-    ;
+  struct thread *cur = thread_current();
+  while (!lock_try_acquire(&cur->file_lock));
   struct file_entry *fe = get_entry_by_fd(fd);
   unsigned size = file_length(fe->file);
-  lock_release(&file_lock);
+  lock_release(&cur->file_lock);
   return size;
 }
 
@@ -373,14 +373,14 @@ int write(int fd, const void *buffer, unsigned length)
  */
 void seek(int fd, unsigned position)
 {
-  while (!lock_try_acquire(&file_lock))
-    ;
+  struct thread *cur = thread_current();
+  while (!lock_try_acquire(&cur->file_lock));
   struct file_entry *fe = get_entry_by_fd(fd);
   if (fe != NULL)
   {
     file_seek(fe->file, position);
   }
-  lock_release(&file_lock);
+  lock_release(&cur->file_lock);
 }
 
 /**
@@ -392,13 +392,13 @@ void seek(int fd, unsigned position)
  */
 unsigned tell(int fd)
 {
-  while (!lock_try_acquire(&file_lock))
-    ;
+  struct thread *cur = thread_current();
+  while (!lock_try_acquire(&cur->file_lock));
   struct file_entry *fe = get_entry_by_fd(fd);
   if (fe == NULL)
     return 0;
   unsigned offset = file_tell(fe->file);
-  lock_release(&file_lock);
+  lock_release(&cur->file_lock);
   return offset;
 }
 
@@ -410,8 +410,8 @@ unsigned tell(int fd)
  */
 void close(int fd)
 {
-  while (!lock_try_acquire(&file_lock))
-    ;
+  struct thread *cur = thread_current();
+  while (!lock_try_acquire(&cur->file_lock));
   struct file_entry *fe = get_entry_by_fd(fd);
   if (fe != NULL)
   {
@@ -419,7 +419,7 @@ void close(int fd)
     list_remove(&fe->elem);
     free(fe);
   }
-  lock_release(&file_lock);
+  lock_release(&cur->file_lock);
 }
 
 /**
