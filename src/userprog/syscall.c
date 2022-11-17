@@ -307,7 +307,7 @@ int filesize(int fd)
   return size;
 }
 
-int read(int fd, void *buffer, unsigned length UNUSED)
+int read(int fd, void *buffer, unsigned length)
 {
   /* Invalid File Descriptor */
   if (fd < 0)
@@ -326,7 +326,12 @@ int read(int fd, void *buffer, unsigned length UNUSED)
   /* Reading From Keyboard */
   if (fd == 0)
   {
-    return input_getc();
+    size_t i = 0;
+    for (i = 0; i < length; i++)
+    {
+      *(uint8_t *)(buffer + i) = input_getc();
+    }
+    return i;
   }
   // Should probably get the fe once its opened.
   if (fd > 0)
