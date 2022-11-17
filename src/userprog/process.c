@@ -65,7 +65,7 @@ process_execute (const char *file_name)
     list_push_back(&child_list,  &child->elem);
   }
   sema_down(&parent->process_sema);
-  if (child == NULL || !child->loaded) return -1;
+  // if (child == NULL || !child->loaded) return -1;
  // change these
   return tid;
 }
@@ -86,19 +86,18 @@ start_process (void *file_name_)
   if_.eflags = FLAG_IF | FLAG_MBS;
   success = load (file_name, &if_.eip, &if_.esp);
   
-  struct child_t *child = get_child_by_tid(thread_current()->parent->tid); 
+  // struct child_t *child = get_child_by_tid(thread_current()->parent->tid); 
   /* If load failed, quit. */
   palloc_free_page (file_name);
-  if (child == NULL || !success) {
+  if ( !success) {
     sema_up(&cur->process_sema);
     thread_exit ();
   }
   else
   {
-    child->loaded = true;
+    // child->loaded = true;
     sema_up(&cur->process_sema);
   }
-
   /* Start the user _exec by simulating a return from an
      interrupt, implemented by intr_exit (in
      threads/intr-stubs.S).  Because intr_exit takes all of its
