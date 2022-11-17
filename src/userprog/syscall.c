@@ -14,6 +14,7 @@
 #include "filesys/file.h"
 #include "threads/vaddr.h"
 #include <limits.h>
+#include "userprog/pagedir.h"
 
 #define STDIN_FILENO 0
 #define STDOUT_FILENO 1
@@ -53,6 +54,13 @@ syscall_handler(struct intr_frame *f UNUSED)
   }
 
   void *esp = f->esp;
+  if (esp == NULL
+      || !is_user_vaddr(esp)
+      || pagedir_get_page (thread_current ()->pagedir, esp) == NULL
+      )
+  {
+    exit(-1);
+  }
   // sanity check
   if (esp >= (void *)0xbffffffc && esp <= PHYS_BASE)
   {
@@ -80,72 +88,191 @@ syscall_handler(struct intr_frame *f UNUSED)
   case SYS_EXEC:
     buffer = esp;
     esp += sizeof(buffer);
+    if (esp == NULL
+      || !is_user_vaddr(esp)
+      || pagedir_get_page (thread_current ()->pagedir, esp) == NULL
+      )
+    {
+      exit(-1);
+    }
     f->eax = exec(buffer);
     break;
   case SYS_WAIT:;
     pid = (int *)esp;
     esp += sizeof(pid);
+    if (esp == NULL
+      || !is_user_vaddr(esp)
+      || pagedir_get_page (thread_current ()->pagedir, esp) == NULL
+      )
+    {
+      exit(-1);
+    }
     f->eax = wait(*pid);
     break;
   case SYS_CREATE:
     filename = *(char**) esp;
     esp += sizeof(filename);
+    if (esp == NULL
+      || !is_user_vaddr(esp)
+      || pagedir_get_page (thread_current ()->pagedir, esp) == NULL
+      )
+    {
+      exit(-1);
+    }
     unsigned *int_size = (unsigned*) esp;
     esp += sizeof(int_size);
+    if (esp == NULL
+      || !is_user_vaddr(esp)
+      || pagedir_get_page (thread_current ()->pagedir, esp) == NULL
+      )
+    {
+      exit(-1);
+    }
     f->eax = create(filename, *int_size);
     break;
   case SYS_REMOVE:
     filename = *(char**) esp;
     esp += sizeof(filename);
+    if (esp == NULL
+      || !is_user_vaddr(esp)
+      || pagedir_get_page (thread_current ()->pagedir, esp) == NULL
+      )
+    {
+      exit(-1);
+    }
     f->eax = remove(filename);
     break;
   case SYS_OPEN:
     filename = *(char**) esp;
     esp += sizeof(filename);
+    if (esp == NULL
+      || !is_user_vaddr(esp)
+      || pagedir_get_page (thread_current ()->pagedir, esp) == NULL
+      )
+    {
+      exit(-1);
+    }
     fd = (int*) open(filename);
     f->eax = *fd;
     break;
   case SYS_FILESIZE:
     fd = (int *)esp;
     esp += sizeof(fd);
+    if (esp == NULL
+      || !is_user_vaddr(esp)
+      || pagedir_get_page (thread_current ()->pagedir, esp) == NULL
+      )
+    {
+      exit(-1);
+    }
     f->eax = filesize(*fd);
     break;
   case SYS_READ:
     // printf("ENTERING READ\n");
     fd = (int *)esp;
     esp += sizeof(fd);
+    if (esp == NULL
+      || !is_user_vaddr(esp)
+      || pagedir_get_page (thread_current ()->pagedir, esp) == NULL
+      )
+    {
+      exit(-1);
+    }
     buffer = esp;
     esp += sizeof(buffer);
+    if (esp == NULL
+      || !is_user_vaddr(esp)
+      || pagedir_get_page (thread_current ()->pagedir, esp) == NULL
+      )
+    {
+      exit(-1);
+    }
     length = (int *)esp;
     esp += sizeof(length);
+    if (esp == NULL
+      || !is_user_vaddr(esp)
+      || pagedir_get_page (thread_current ()->pagedir, esp) == NULL
+      )
+    {
+      exit(-1);
+    }
     f->eax = read(*fd, buffer, *length);
     // printf("EXITING READ\n");
     break;
   case SYS_WRITE:
     fd = (int *)esp;
     esp += sizeof(fd);
+    if (esp == NULL
+      || !is_user_vaddr(esp)
+      || pagedir_get_page (thread_current ()->pagedir, esp) == NULL
+      )
+    {
+      exit(-1);
+    }
     buffer = esp;
     esp += sizeof(buffer);
+    if (esp == NULL
+      || !is_user_vaddr(esp)
+      || pagedir_get_page (thread_current ()->pagedir, esp) == NULL
+      )
+    {
+      exit(-1);
+    }
     length = (int *)esp;
     esp += sizeof(length);
+    if (esp == NULL
+      || !is_user_vaddr(esp)
+      || pagedir_get_page (thread_current ()->pagedir, esp) == NULL
+      )
+    {
+      exit(-1);
+    }
     f->eax = write(*fd, buffer, *length);
     break;
   case SYS_SEEK:
     fd = (int *)esp;
     esp += sizeof(fd);
+    if (esp == NULL
+      || !is_user_vaddr(esp)
+      || pagedir_get_page (thread_current ()->pagedir, esp) == NULL
+      )
+    {
+      exit(-1);
+    }
     unsigned *pos = (unsigned*) esp;
     esp += sizeof(pos);
+    if (esp == NULL
+      || !is_user_vaddr(esp)
+      || pagedir_get_page (thread_current ()->pagedir, esp) == NULL
+      )
+    {
+      exit(-1);
+    }
     // f->eax = seek(*fd, *pos); seek has no return value
     seek(*fd, *pos);
     break;
   case SYS_TELL:
     fd = (int *)esp;
     esp += sizeof(fd);
+    if (esp == NULL
+      || !is_user_vaddr(esp)
+      || pagedir_get_page (thread_current ()->pagedir, esp) == NULL
+      )
+    {
+      exit(-1);
+    }
     f->eax = tell(*fd);
     break;
   case SYS_CLOSE:
     fd = (int *)esp;
     esp += sizeof(fd);
+    if (esp == NULL
+      || !is_user_vaddr(esp)
+      || pagedir_get_page (thread_current ()->pagedir, esp) == NULL
+      )
+    {
+      exit(-1);
+    }
     close(*fd);
     // f->eax = close(*fd); close has no return value
     break;
