@@ -159,7 +159,8 @@ process_exit (void)
   uint32_t *pd;
   struct child_t *child = NULL;
   struct list_elem *e;
-  for (e = list_begin(&cur->child_list); e != list_end(&cur->child_list);
+  struct thread *parent = cur->parent;
+  for (e = list_begin(&parent->child_list); e != list_end(&parent->child_list);
        e = list_next(e))
   {
     struct child_t *child_in_list = list_entry(e, struct child_t, elem);
@@ -188,7 +189,6 @@ process_exit (void)
       pagedir_activate (NULL);
       pagedir_destroy (pd);
     }
-    // printf("---------------Exiting Process Exit---------------\n");
 }
 
 /* Sets up the CPU for running user code in the current

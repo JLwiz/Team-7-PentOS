@@ -489,7 +489,7 @@ init_thread(struct thread *t, const char *name, int priority)
   t->stack = (uint8_t *)t + PGSIZE;
   t->priority = priority;
   t->magic = THREAD_MAGIC;
-
+  t->parent = running_thread();
   list_init(&t->file_list);
   list_init(&t->child_list);
   sema_init(&t->process_sema, 1);

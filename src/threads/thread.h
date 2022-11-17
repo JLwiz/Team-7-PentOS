@@ -94,7 +94,7 @@ struct thread
     int priority;                       /* Priority. */
     struct list_elem allelem;           /* List element for all threads list. */
     bool been_waited_on;
-    
+    struct thread *parent;
    //  struct hash_elem file_descriptors;  /* List element for filedescriptor list*/
    //  struct hash fd_hash;
 
@@ -105,6 +105,7 @@ struct thread
 
     struct lock file_lock; /*lock used for syscalls*/
     
+
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
     
