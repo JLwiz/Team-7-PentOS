@@ -340,10 +340,10 @@ int wait(pid_t pid)
  */
 bool create(const char *file, unsigned initial_size)
 {
-  if (strlen(file) > 14)
+  if (file == NULL || strlen(file) > 14)
   {
-    printf("NOT DONE YET: FILE NAME TOO LONG\n");
-    thread_exit(); // FIX wym???
+    //printf("NOT DONE YET: FILE NAME TOO LONG\n");
+    exit(-1); // FIX wym???
   }
   struct thread *cur = thread_current();
   lock_acquire(&cur->file_lock);
