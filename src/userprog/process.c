@@ -182,18 +182,8 @@ void process_exit(void)
        e = list_next(e))
   {
     struct child_t *child_in_list = list_entry(e, struct child_t, elem);
-    // printf("Child In List: %d\n", counter);
-    // printf("\tTID: %d\n", child_in_list->child_tid);
-    // printf("\tExit: %d\n", child_in_list->exit);
-    // printf("\tWaited: %d\n", child_in_list->waited_once);
-    // printf("\tLoaded: %d\n", child_in_list->loaded);
     if (child_in_list->child_tid == cur->tid)
     {
-      // printf("Child Found In List: %d\n", counter);
-      // printf("\tTID: %d\n", child_in_list->child_tid);
-      // printf("\tExit: %d\n", child_in_list->exit);
-      // printf("\tWaited: %d\n", child_in_list->waited_once);
-      // printf("\tLoaded: %d\n", child_in_list->loaded);
       child = child_in_list;
       break;
     }
