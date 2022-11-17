@@ -12,6 +12,8 @@
 #include <string.h>
 #include "filesys/filesys.h"
 #include "filesys/file.h"
+#include "threads/vaddr.h"
+#include <limits.h>
 
 #define STDIN_FILENO 0
 #define STDOUT_FILENO 1
@@ -24,7 +26,7 @@
  *        else needed by system calls.
  */
 static void syscall_handler(struct intr_frame *);
-
+bool check_if_file_exists_by_fd(int fd);
 unsigned int next_fd;
 // struct lock file_lock;
 
@@ -52,7 +54,7 @@ syscall_handler(struct intr_frame *f UNUSED)
 
   void *esp = f->esp;
   // sanity check
-  if (esp >= (void *)0xbffffffc)
+  if (esp >= (void *)0xbffffffc && esp <= PHYS_BASE)
   {
     exit(-1);
   }
@@ -108,6 +110,7 @@ syscall_handler(struct intr_frame *f UNUSED)
     f->eax = filesize(*fd);
     break;
   case SYS_READ:
+    // printf("ENTERING READ\n");
     fd = (int *)esp;
     esp += sizeof(fd);
     buffer = esp;
@@ -115,6 +118,7 @@ syscall_handler(struct intr_frame *f UNUSED)
     length = (int *)esp;
     esp += sizeof(length);
     f->eax = read(*fd, buffer, *length);
+    // printf("EXITING READ\n");
     break;
   case SYS_WRITE:
     fd = (int *)esp;
@@ -260,7 +264,7 @@ bool remove(const char *file)
  */
 int open(const char *file)
 {
-  printf("---------------Entering Syscall Open---------------\n");
+  // printf("---------------Entering Syscall Open---------------\n");
   struct thread *cur = thread_current();
   lock_acquire(&cur->file_lock);
   struct file *opened_file = filesys_open(file);
@@ -280,7 +284,7 @@ int open(const char *file)
   struct list file_list = thread_current()->file_list;
   list_push_back(&file_list, &entry->elem);
   lock_release(&cur->file_lock);
-  printf("---------------Exiting Syscall Open---------------\n");
+  // printf("---------------Exiting Syscall Open---------------\n");
   return cur_fd;
 }
 
@@ -306,6 +310,7 @@ int read(int fd, void *buffer, unsigned length UNUSED)
 {
   // printf("made it to read\n");
   /* Invalid File Descriptor */
+  if (fd >= INT_MAX || fd <= INT_MIN) return -1;
   if (fd < 0)
   {
     // printf("Passed Invalid File Descriptor.\n");
@@ -313,7 +318,6 @@ int read(int fd, void *buffer, unsigned length UNUSED)
   }
 
   /* Null Buffer */
-
   if (buffer == NULL)
   {
     // printf("Passed A Null Buffer.\n");
@@ -325,14 +329,14 @@ int read(int fd, void *buffer, unsigned length UNUSED)
   {
     return input_getc();
   }
-
+  // Should probably get the fe once its opened.
   if (fd > 0)
   {
     struct file_entry *fe = get_entry_by_fd(fd);
+    if (fe == NULL) return -1;
     int bytes_read = file_read(fe->file, buffer, 0);
     return bytes_read;
   }
-
   /* Reading From File */
   // printf("Reading from anything but STDIN not yet implemented.\n");
   return -1;
@@ -366,6 +370,7 @@ int write(int fd, const void *buffer, unsigned length)
   if (fd > 0)
   {
     struct file_entry *fe = get_entry_by_fd(fd);
+    if (fe == NULL) return -1;
     int bytes_write = file_write(fe->file, buffer, 0);
     return bytes_write;
   }
@@ -478,4 +483,20 @@ struct file_entry *get_entry_by_name(const char *name)
     }
   }
   return NULL;
+}
+
+bool check_if_file_exists_by_fd(int fd)
+{
+  struct list_elem *e;
+  struct list file_list = thread_current()->parent->file_list;
+  for (e = list_begin(&file_list); e != list_end(&file_list);
+       e = list_next(e))
+  {
+    struct file_entry *cur = list_entry(e, struct file_entry, elem);
+    if (cur->fd == fd)
+    {
+      return true;
+    }
+  }
+  return false;
 }
