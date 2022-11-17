@@ -139,7 +139,6 @@ start_process(void *file_name_)
    does nothing. */
 int process_wait(tid_t child_tid UNUSED)
 {
-    printf("---------------Entering Process Wait---------------\n");
   struct thread *parent = thread_current(); // Get cur
   struct child_t *child = NULL;
 
@@ -154,7 +153,7 @@ int process_wait(tid_t child_tid UNUSED)
       break;
     }
   }
-  if (child == NULL)
+  if (child == NULL || child->waited_once)
   {
     return -1;
   }
@@ -166,36 +165,35 @@ int process_wait(tid_t child_tid UNUSED)
   child->waited_once = true;
   list_remove(e);
   return status;
-  printf("---------------Exiting Process Exit---------------\n");
+
 }
 
 /* Free the current process's resources. */
 void process_exit(void)
 {
-  printf("---------------Entering Process Exit---------------\n");
   struct thread *cur = thread_current();
   uint32_t *pd;
   struct child_t *child = NULL;
   struct list_elem *e;
   struct thread *parent = cur->parent;
   int counter = 0;
-  printf("Parent TID to Find Child: %d\n", cur->tid);
+  // printf("Parent TID to Find Child: %d\n", cur->tid);
   for (e = list_begin(&parent->child_list); e != list_end(&parent->child_list);
        e = list_next(e))
   {
     struct child_t *child_in_list = list_entry(e, struct child_t, elem);
-    printf("Child In List: %d\n", counter);
-    printf("\tTID: %d\n", child_in_list->child_tid);
-    printf("\tExit: %d\n", child_in_list->exit);
-    printf("\tWaited: %d\n", child_in_list->waited_once);
-    printf("\tLoaded: %d\n", child_in_list->loaded);
+    // printf("Child In List: %d\n", counter);
+    // printf("\tTID: %d\n", child_in_list->child_tid);
+    // printf("\tExit: %d\n", child_in_list->exit);
+    // printf("\tWaited: %d\n", child_in_list->waited_once);
+    // printf("\tLoaded: %d\n", child_in_list->loaded);
     if (child_in_list->child_tid == cur->tid)
     {
-      printf("Child Found In List: %d\n", counter);
-      printf("\tTID: %d\n", child_in_list->child_tid);
-      printf("\tExit: %d\n", child_in_list->exit);
-      printf("\tWaited: %d\n", child_in_list->waited_once);
-      printf("\tLoaded: %d\n", child_in_list->loaded);
+      // printf("Child Found In List: %d\n", counter);
+      // printf("\tTID: %d\n", child_in_list->child_tid);
+      // printf("\tExit: %d\n", child_in_list->exit);
+      // printf("\tWaited: %d\n", child_in_list->waited_once);
+      // printf("\tLoaded: %d\n", child_in_list->loaded);
       child = child_in_list;
       break;
     }
@@ -206,7 +204,7 @@ void process_exit(void)
     child->exit_status = cur->status;
     child->exit = true;
   }
-  sema_up(&cur->process_sema); /* this sema tells wait to unblock. */
+  sema_up(&parent->process_sema); /* this sema tells wait to unblock. */
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
   pd = cur->pagedir;
@@ -223,7 +221,6 @@ void process_exit(void)
     pagedir_activate(NULL);
     pagedir_destroy(pd);
   }
-  printf("---------------Exiting Process Exit---------------\n");
 }
 
 /* Sets up the CPU for running user code in the current
