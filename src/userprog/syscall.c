@@ -43,6 +43,7 @@ syscall_handler(struct intr_frame *f UNUSED)
    * The first argument is in the 32-bit word at the next higher address, and so on.
    * The caller's stack pointer is accessible by the esp member of *f.
    */
+  printf("--------------Made it to syscall handler--------------");
   if (f == NULL)
   {
     printf("Invalid intr_frame\n");
@@ -163,6 +164,7 @@ void halt(void)
 
 void exit(int status)
 {
+  printf("made it to exit fml\n");
   /* Getting current thread */
   struct thread *cur = thread_current();
   // TODO: needs to exit the child thread instead of cur thread.
@@ -294,6 +296,7 @@ int filesize(int fd)
 
 int read(int fd, void *buffer, unsigned length UNUSED)
 {
+  printf("made it to read\n");
   /* Invalid File Descriptor */
   if (fd < 0)
   {
@@ -328,6 +331,7 @@ int read(int fd, void *buffer, unsigned length UNUSED)
 }
 int write(int fd, const void *buffer, unsigned length)
 {
+  printf("made it to write\n");
   /* Invalid File Descriptor */
   if (fd < 0)
   {

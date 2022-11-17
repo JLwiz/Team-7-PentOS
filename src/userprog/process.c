@@ -83,14 +83,14 @@ start_process (void *file_name_)
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
   success = load (file_name, &if_.eip, &if_.esp);
-  sema_up(&cur->process_sema);
-
  
   /* If load failed, quit. */
   palloc_free_page (file_name);
   if (!success) {
+    sema_up(&cur->process_sema);
     thread_exit ();
   }
+  sema_up(&cur->process_sema);
 
   /* Start the user _exec by simulating a return from an
      interrupt, implemented by intr_exit (in
@@ -114,17 +114,15 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid UNUSED) 
 {
-  struct thread* cur = thread_current(); //Get cur
-  struct thread* child = NULL;
-  
+  struct thread *parent = thread_current(); //Get cur
+  struct child_t *child = NULL;
 
   struct list_elem *e;
-  bool child_valid_check = false;
-  for (e = list_begin(&cur->child_list); e != list_end(&cur->child_list);
+  for (e = list_begin(&parent->child_list); e != list_end(&parent->child_list);
        e = list_next(e))
   {
-    struct thread *child_in_list = list_entry(e, struct thread, allelem);
-    if (child_in_list->tid == child_tid)
+    struct child_t *child_in_list = list_entry(e, struct child_t, elem);
+    if (child_in_list->child_tid == child_tid)
     {
       child = child_in_list;
       break;
@@ -135,19 +133,18 @@ process_wait (tid_t child_tid UNUSED)
   {
     return -1;
   }
-
-   if (child->been_waited_on == true) 
+  if (child->waited_once || child->exit) 
   {
     return -1;
   }
-
-
-  if (child->status != THREAD_DYING) 
-  {
-    child->been_waited_on = true;
-    sema_down(&cur->process_sema);
+  if (!child->exit){
+    sema_down(&parent->process_sema);
   }
-  return child->status;
+  int status = child->exit_status;
+  child->waited_once = true;
+  list_remove(e);
+  return status;
+
 }
 
 /* Free the current process's resources. */
@@ -156,6 +153,20 @@ process_exit (void)
 {
   struct thread *cur = thread_current ();
   uint32_t *pd;
+  struct child_t *child = NULL;
+  struct list_elem *e;
+  for (e = list_begin(&cur->child_list); e != list_end(&cur->child_list);
+       e = list_next(e))
+  {
+    struct child_t *child_in_list = list_entry(e, struct child_t, elem);
+    if (child_in_list->child_tid == cur->tid)
+    {
+      child = child_in_list;
+      break;
+    }
+  }
+  child->exit_status= cur->status;
+  child->exit = true;
   sema_up(&cur->process_sema);
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */

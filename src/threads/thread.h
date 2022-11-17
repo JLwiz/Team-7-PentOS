@@ -185,6 +185,7 @@ struct child_t
    bool waited_once;
    int exit_status;
    struct list_elem elem;
+   struct list_elem allelem;
 };
 
 #endif /* threads/thread.h */
