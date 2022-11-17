@@ -43,7 +43,7 @@ syscall_handler(struct intr_frame *f UNUSED)
    * The first argument is in the 32-bit word at the next higher address, and so on.
    * The caller's stack pointer is accessible by the esp member of *f.
    */
-  printf("--------------Made it to syscall handler--------------");
+  printf("--------------Entering syscall handler--------------");
   if (f == NULL)
   {
     printf("Invalid intr_frame\n");
@@ -149,6 +149,7 @@ syscall_handler(struct intr_frame *f UNUSED)
     thread_exit();
     break;
   }
+  printf("---------------Exiting Process Wait---------------\n");
 }
 
 /**
@@ -164,14 +165,14 @@ void halt(void)
 
 void exit(int status)
 {
-  printf("made it to exit fml\n");
+  printf("---------------Entering Syscall Exit---------------\n");
   /* Getting current thread */
   struct thread *cur = thread_current();
   // TODO: needs to exit the child thread instead of cur thread.
   // should be in process.
   printf("%s: exit(%d)\n", cur->name, status);
   // cur->status = status;
-
+  printf("---------------Exiting Syscall Exit---------------\n");
   thread_exit();
 }
 
@@ -185,7 +186,8 @@ pid_t exec(const char *cmd_line)
 
 int wait(pid_t pid)
 {
-  return process_wait((tid_t)pid);
+  // This is not working
+  return process_wait(pid);
 }
 
 /**
@@ -254,6 +256,7 @@ bool remove(const char *file)
  */
 int open(const char *file)
 {
+  printf("---------------Entering Syscall Open---------------\n");
   struct thread *cur = thread_current();
   while (!lock_try_acquire(&cur->file_lock));
   struct file *opened_file = filesys_open(file);
@@ -271,8 +274,9 @@ int open(const char *file)
   strlcpy(entry->file_name, file, sizeof(file));
   entry->fd = cur_fd;
   struct list file_list = thread_current()->file_list;
-  list_push_back(&cur->file_list, &entry->elem);
+  list_push_back(&file_list, &entry->elem);
   lock_release(&cur->file_lock);
+  printf("---------------Exiting Syscall Open---------------\n");
   return cur_fd;
 }
 
