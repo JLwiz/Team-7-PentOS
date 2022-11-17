@@ -38,6 +38,17 @@ void syscall_init(void)
   intr_register_int(0x30, 3, INTR_ON, syscall_handler, "syscall");
 }
 
+static void validate_pointer(void *p)
+{
+  if (p == NULL
+      || !is_user_vaddr(p)
+      || pagedir_get_page (thread_current ()->pagedir, p) == NULL
+      )
+    {
+      exit(-1);
+    }
+}
+
 static void
 syscall_handler(struct intr_frame *f UNUSED)
 {
@@ -54,13 +65,7 @@ syscall_handler(struct intr_frame *f UNUSED)
   }
 
   void *esp = f->esp;
-  if (esp == NULL
-      || !is_user_vaddr(esp)
-      || pagedir_get_page (thread_current ()->pagedir, esp) == NULL
-      )
-  {
-    exit(-1);
-  }
+  validate_pointer(esp);
   // sanity check
   if (esp >= (void *)0xbffffffc && esp <= PHYS_BASE)
   {
@@ -88,191 +93,89 @@ syscall_handler(struct intr_frame *f UNUSED)
   case SYS_EXEC:
     buffer = esp;
     esp += sizeof(buffer);
-    if (esp == NULL
-      || !is_user_vaddr(esp)
-      || pagedir_get_page (thread_current ()->pagedir, esp) == NULL
-      )
-    {
-      exit(-1);
-    }
+    validate_pointer(esp);
     f->eax = exec(buffer);
     break;
   case SYS_WAIT:;
     pid = (int *)esp;
     esp += sizeof(pid);
-    if (esp == NULL
-      || !is_user_vaddr(esp)
-      || pagedir_get_page (thread_current ()->pagedir, esp) == NULL
-      )
-    {
-      exit(-1);
-    }
+    validate_pointer(esp);
     f->eax = wait(*pid);
     break;
   case SYS_CREATE:
     filename = *(char**) esp;
     esp += sizeof(filename);
-    if (esp == NULL
-      || !is_user_vaddr(esp)
-      || pagedir_get_page (thread_current ()->pagedir, esp) == NULL
-      )
-    {
-      exit(-1);
-    }
+    validate_pointer(esp);
     unsigned *int_size = (unsigned*) esp;
     esp += sizeof(int_size);
-    if (esp == NULL
-      || !is_user_vaddr(esp)
-      || pagedir_get_page (thread_current ()->pagedir, esp) == NULL
-      )
-    {
-      exit(-1);
-    }
+    validate_pointer(esp);
     f->eax = create(filename, *int_size);
     break;
   case SYS_REMOVE:
     filename = *(char**) esp;
     esp += sizeof(filename);
-    if (esp == NULL
-      || !is_user_vaddr(esp)
-      || pagedir_get_page (thread_current ()->pagedir, esp) == NULL
-      )
-    {
-      exit(-1);
-    }
+    validate_pointer(esp);
     f->eax = remove(filename);
     break;
   case SYS_OPEN:
     filename = *(char**) esp;
     esp += sizeof(filename);
-    if (esp == NULL
-      || !is_user_vaddr(esp)
-      || pagedir_get_page (thread_current ()->pagedir, esp) == NULL
-      )
-    {
-      exit(-1);
-    }
+    validate_pointer(esp);
     fd = (int*) open(filename);
     f->eax = *fd;
     break;
   case SYS_FILESIZE:
     fd = (int *)esp;
     esp += sizeof(fd);
-    if (esp == NULL
-      || !is_user_vaddr(esp)
-      || pagedir_get_page (thread_current ()->pagedir, esp) == NULL
-      )
-    {
-      exit(-1);
-    }
+    validate_pointer(esp);
     f->eax = filesize(*fd);
     break;
   case SYS_READ:
     // printf("ENTERING READ\n");
     fd = (int *)esp;
     esp += sizeof(fd);
-    if (esp == NULL
-      || !is_user_vaddr(esp)
-      || pagedir_get_page (thread_current ()->pagedir, esp) == NULL
-      )
-    {
-      exit(-1);
-    }
+    validate_pointer(esp);
     buffer = esp;
     esp += sizeof(buffer);
-    if (esp == NULL
-      || !is_user_vaddr(esp)
-      || pagedir_get_page (thread_current ()->pagedir, esp) == NULL
-      )
-    {
-      exit(-1);
-    }
+    validate_pointer(esp);
     length = (int *)esp;
     esp += sizeof(length);
-    if (esp == NULL
-      || !is_user_vaddr(esp)
-      || pagedir_get_page (thread_current ()->pagedir, esp) == NULL
-      )
-    {
-      exit(-1);
-    }
+    validate_pointer(esp);
     f->eax = read(*fd, buffer, *length);
     // printf("EXITING READ\n");
     break;
   case SYS_WRITE:
     fd = (int *)esp;
     esp += sizeof(fd);
-    if (esp == NULL
-      || !is_user_vaddr(esp)
-      || pagedir_get_page (thread_current ()->pagedir, esp) == NULL
-      )
-    {
-      exit(-1);
-    }
+    validate_pointer(esp);
     buffer = esp;
     esp += sizeof(buffer);
-    if (esp == NULL
-      || !is_user_vaddr(esp)
-      || pagedir_get_page (thread_current ()->pagedir, esp) == NULL
-      )
-    {
-      exit(-1);
-    }
+    validate_pointer(esp);
     length = (int *)esp;
     esp += sizeof(length);
-    if (esp == NULL
-      || !is_user_vaddr(esp)
-      || pagedir_get_page (thread_current ()->pagedir, esp) == NULL
-      )
-    {
-      exit(-1);
-    }
+    validate_pointer(esp);
     f->eax = write(*fd, buffer, *length);
     break;
   case SYS_SEEK:
     fd = (int *)esp;
     esp += sizeof(fd);
-    if (esp == NULL
-      || !is_user_vaddr(esp)
-      || pagedir_get_page (thread_current ()->pagedir, esp) == NULL
-      )
-    {
-      exit(-1);
-    }
+    validate_pointer(esp);
     unsigned *pos = (unsigned*) esp;
     esp += sizeof(pos);
-    if (esp == NULL
-      || !is_user_vaddr(esp)
-      || pagedir_get_page (thread_current ()->pagedir, esp) == NULL
-      )
-    {
-      exit(-1);
-    }
+    validate_pointer(esp);
     // f->eax = seek(*fd, *pos); seek has no return value
     seek(*fd, *pos);
     break;
   case SYS_TELL:
     fd = (int *)esp;
     esp += sizeof(fd);
-    if (esp == NULL
-      || !is_user_vaddr(esp)
-      || pagedir_get_page (thread_current ()->pagedir, esp) == NULL
-      )
-    {
-      exit(-1);
-    }
+    validate_pointer(esp);
     f->eax = tell(*fd);
     break;
   case SYS_CLOSE:
     fd = (int *)esp;
     esp += sizeof(fd);
-    if (esp == NULL
-      || !is_user_vaddr(esp)
-      || pagedir_get_page (thread_current ()->pagedir, esp) == NULL
-      )
-    {
-      exit(-1);
-    }
+    validate_pointer(esp);
     close(*fd);
     // f->eax = close(*fd); close has no return value
     break;
@@ -340,6 +243,7 @@ int wait(pid_t pid)
  */
 bool create(const char *file, unsigned initial_size)
 {
+  validate_pointer((void *)file);
   if (strlen(file) > 14)
   {
     printf("NOT DONE YET: FILE NAME TOO LONG\n");
@@ -364,6 +268,7 @@ bool create(const char *file, unsigned initial_size)
  */
 bool remove(const char *file)
 {
+  validate_pointer((void *)file);
   if (strlen(file) > 14)
   {
     printf("NOT DONE YET: FILE NAME TOO LONG\n");
@@ -393,6 +298,7 @@ bool remove(const char *file)
  */
 int open(const char *file)
 {
+  validate_pointer((void *)file);
   // printf("---------------Entering Syscall Open---------------\n");
   struct thread *cur = thread_current();
   lock_acquire(&cur->file_lock);
@@ -437,6 +343,7 @@ int filesize(int fd)
 
 int read(int fd, void *buffer, unsigned length)
 {
+  validate_pointer((void *)buffer);
   /* Invalid File Descriptor */
   if (fd < 0)
   {
@@ -475,6 +382,7 @@ int read(int fd, void *buffer, unsigned length)
 }
 int write(int fd, const void *buffer, unsigned length)
 {
+  validate_pointer((void *)buffer);
   // printf("made it to write\n");
   /* Invalid File Descriptor */
   if (fd < 0)
