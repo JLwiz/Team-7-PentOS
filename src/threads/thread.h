@@ -166,7 +166,6 @@ int thread_get_nice (void);
 void thread_set_nice (int);
 int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
-
 struct thread* get_thread(tid_t);
 // unsigned thread_hash (const struct hash_elem*, void*);
 // bool thread_less (const struct hash_elem* , const struct hash_elem*,void* );

@@ -25,6 +25,7 @@
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
 static unsigned char COMMAND_LINE_LIMIT = 128;
+static struct child_t* get_child_by_tid(tid_t tid);
 
 /* Starts a new thread running a user program loaded from
    FILENAME.  The new thread may be scheduled (and may even exit)
@@ -47,7 +48,7 @@ process_execute (const char *file_name)
 
   tid = thread_create (fn_copy, PRI_DEFAULT, start_process, fn_copy);
 
-  struct child_t *child;
+  struct child_t *child = NULL;
   
   if (tid == TID_ERROR) {
     palloc_free_page (fn_copy);
@@ -64,6 +65,7 @@ process_execute (const char *file_name)
     list_push_back(&child_list,  &child->elem);
   }
   sema_down(&parent->process_sema);
+  if (child == NULL || !child->loaded) return -1;
  // change these
   return tid;
 }
@@ -83,15 +85,17 @@ start_process (void *file_name_)
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
   success = load (file_name, &if_.eip, &if_.esp);
- 
+  
+  struct child_t *child = get_child_by_tid(thread_current()->parent->tid); 
   /* If load failed, quit. */
   palloc_free_page (file_name);
-  if (!success) {
+  if (child == NULL || !success) {
     sema_up(&cur->process_sema);
     thread_exit ();
   }
   else
   {
+    child->loaded = true;
     sema_up(&cur->process_sema);
   }
 
@@ -615,4 +619,24 @@ install_page (void *upage, void *kpage, bool writable)
      address, then map our page there. */
   return (pagedir_get_page (t->pagedir, upage) == NULL
           && pagedir_set_page (t->pagedir, upage, kpage, writable));
+}
+
+static struct child_t* get_child_by_tid(tid_t tid)
+{
+  struct thread *cur = thread_current(); //Get cur
+  struct thread *parent = cur->parent;
+
+  struct list_elem *e;
+  int counter = 0;
+  for (e = list_begin(&parent->child_list); e != list_end(&parent->child_list);
+       e = list_next(e))
+  {
+    struct child_t *child_in_list = list_entry(e, struct child_t, elem);
+    counter++;
+    if (child_in_list->child_tid == tid)
+    {
+      return child_in_list;
+    }
+  }
+  return NULL;
 }

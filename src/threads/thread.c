@@ -11,6 +11,7 @@
 #include "threads/switch.h"
 #include "threads/synch.h"
 #include "threads/vaddr.h"
+#include "threads/malloc.h"
 #ifdef USERPROG
 #include "userprog/process.h"
 #endif
@@ -607,28 +608,6 @@ allocate_tid(void)
   lock_release(&tid_lock);
 
   return tid;
-}
-
-static struct child_t* get_child(tid_t tid)
-{
-  struct thread *parent = thread_current(); //Get cur
-  struct child_t *child = NULL;
-
-  struct list_elem *e;
-  int counter = 0;
-  for (e = list_begin(&parent->child_list); e != list_end(&parent->child_list);
-       e = list_next(e))
-  {
-    struct child_t *child_in_list = list_entry(e, struct child_t, elem);
-    printf("%d\n", counter);
-    counter++;
-    if (child_in_list->child_tid == tid)
-    {
-      child = child_in_list;
-      break;
-    }
-  }
-  return child;
 }
 
 /* Offset of `stack' member within `struct thread'.
