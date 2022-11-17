@@ -28,12 +28,12 @@
  */
 static void syscall_handler(struct intr_frame *);
 bool check_if_file_exists_by_fd(int fd);
-unsigned int next_fd;
+// unsigned int next_fd;
 // struct lock file_lock;
 
 void syscall_init(void)
 {
-  next_fd = 2;
+  // next_fd = 2;
   // lock_init(&cur->file_lock);
   intr_register_int(0x30, 3, INTR_ON, syscall_handler, "syscall");
 }
@@ -324,8 +324,8 @@ int open(const char *file)
     return -1;
   }
   struct file_entry *entry = malloc(sizeof(struct file_entry));
-  int cur_fd = next_fd;
-  next_fd = next_fd + 1;
+  int cur_fd = cur->next_fd;
+  cur->next_fd = cur_fd + 1;
   entry->file = opened_file;
   entry->file_name = (char*) file;
   entry->fd = cur_fd;

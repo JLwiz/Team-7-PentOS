@@ -111,6 +111,7 @@ struct thread
     
     struct list_elem child_threads;
 
+    int next_fd;
     /* Shared sleeper list */
     struct list_elem sleeper_elem; /* Sleeping threads list */
     
