@@ -181,6 +181,9 @@ pid_t exec(const char *cmd_line)
   // TODO
   ASSERT(thread_current()->status == THREAD_RUNNING);
   tid_t return_pid = process_execute(cmd_line);
+  if (return_pid == -1) {
+    return -1;
+  }
   // Thus, the parent process cannot return from the exec until it knows whether the child process successfully loaded its executable.
   return return_pid;
 }
