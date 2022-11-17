@@ -20,7 +20,7 @@
 #include "threads/vaddr.h"
 
 
-// struct semaphore global_sema;
+// struct //semaphore global_//sema;
 
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
@@ -35,8 +35,8 @@ process_execute (const char *file_name)
 {
   char *fn_copy;
   tid_t tid;
-  struct thread* cur = thread_current();
-  // sema_init(&cur->process_sema, 1); //change these
+  struct thread* parent = thread_current();
+  // //sema_init(&cur->process_//sema, 1); //change these
   /* Make a copy of FILE_NAME.
      Otherwise there's a race between the caller and load(). */
   fn_copy = palloc_get_page (0);
@@ -47,13 +47,27 @@ process_execute (const char *file_name)
 
   tid = thread_create (fn_copy, PRI_DEFAULT, start_process, fn_copy);
 
-  struct thread* child = get_thread(tid); //Probably not right
-
+  //struct thread* child = get_thread(tid); //Probably not right
+  struct child_t *child;
+  // //sema_init(&parent->process_//sema, 1);
   if (tid == TID_ERROR) {
     palloc_free_page (fn_copy);
+  } 
+  else 
+  {
+    struct list child_list = parent->file_list;
+    printf("CHILD LIST\n");
+    printf("%d", child_list);
+    printf("\n");
+    child = malloc(sizeof (*child));
+    if (child == NULL) return -1;
+    child->child_tid = tid;
+    child->exit = false;
+    child->waited_once = false;
+    list_push_front(&child_list,  &child->elem);
+    printf("after\n");
   }
-  list_push_back(&cur->child_thread_list,  &child->child_threads); //Seems incorrect
-  sema_down(&cur->process_sema); // change these
+ // change these
   return tid;
 }
 
@@ -72,7 +86,7 @@ start_process (void *file_name_)
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
   success = load (file_name, &if_.eip, &if_.esp);
-  sema_up(&cur->process_sema);
+  //sema_up(&cur->process_//sema);
 
  
   /* If load failed, quit. */
@@ -109,7 +123,7 @@ process_wait (tid_t child_tid UNUSED)
 
   struct list_elem *e;
   bool child_valid_check = false;
-  for (e = list_begin(&cur->child_thread_list); e != list_end(&cur->child_thread_list);
+  for (e = list_begin(&cur->child_list); e != list_end(&cur->child_list);
        e = list_next(e))
   {
     struct thread *child_in_list = list_entry(e, struct thread, allelem);
@@ -134,7 +148,7 @@ process_wait (tid_t child_tid UNUSED)
   if (child->status != THREAD_DYING) 
   {
     child->been_waited_on = true;
-    sema_down(&cur->process_sema);
+    //sema_down(&cur->process_//sema);
   }
   return child->status;
 }
@@ -145,7 +159,7 @@ process_exit (void)
 {
   struct thread *cur = thread_current ();
   uint32_t *pd;
-  sema_up(&cur->process_sema);
+  //sema_up(&cur->process_//sema);
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
   pd = cur->pagedir;

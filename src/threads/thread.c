@@ -196,10 +196,9 @@ tid_t thread_create(const char *name, int priority,
   // plus don't want to implement collision avoidance/detection.
   // hash_init(&t->fd_hash, thread_hash, file_less, NULL);
   
-  list_init(&t->file_list);
-
-  list_init(&t->child_thread_list);
-  sema_init(&t->process_sema, 1);
+  // list_init(&t->file_list); moved to init_thread
+  // list_init(&t->child_list);
+  // sema_init(&t->process_sema, 1);
   t->been_waited_on = false;
 
   /* Stack frame for kernel_thread(). */
@@ -492,6 +491,9 @@ init_thread(struct thread *t, const char *name, int priority)
   t->stack = (uint8_t *)t + PGSIZE;
   t->priority = priority;
   t->magic = THREAD_MAGIC;
+
+  list_init(&t->file_list);
+  list_init(&t->child_list);
 
   old_level = intr_disable();
   list_push_back(&all_list, &t->allelem);

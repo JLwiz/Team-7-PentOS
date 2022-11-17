@@ -101,7 +101,7 @@ struct thread
     struct list file_list; /* List of all opened files*/
 
 
-    struct list child_thread_list; /* List of all opened files*/
+    struct list child_list; /* List of all opened files*/
 
     
     /* Shared between thread.c and synch.c. */
@@ -175,6 +175,15 @@ struct file_entry
     char *file_name;
     struct list_elem allelem;
     struct list_elem elem;
+};
+
+struct child_t
+{
+   tid_t child_tid;
+   bool exit;
+   bool waited_once;
+   int exit_status;
+   struct list_elem elem;
 };
 
 #endif /* threads/thread.h */
