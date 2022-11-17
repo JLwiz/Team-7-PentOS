@@ -372,7 +372,7 @@ int read(int fd, void *buffer, unsigned length)
   {
     struct file_entry *fe = get_entry_by_fd(fd);
     if (fe == NULL) return -1;
-    int bytes_read = file_read(fe->file, buffer, 0);
+    int bytes_read = file_read(fe->file, buffer, length);
     return bytes_read;
   }
   /* Reading From File */
