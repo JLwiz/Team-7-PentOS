@@ -47,9 +47,8 @@ process_execute (const char *file_name)
 
   tid = thread_create (fn_copy, PRI_DEFAULT, start_process, fn_copy);
 
-  //struct thread* child = get_thread(tid); //Probably not right
   struct child_t *child;
-  // sema_init(&parent->process_sema, 1);
+  
   if (tid == TID_ERROR) {
     palloc_free_page (fn_copy);
   } 
@@ -61,7 +60,8 @@ process_execute (const char *file_name)
     child->child_tid = tid;
     child->exit = false;
     child->waited_once = false;
-    list_push_front(&child_list,  &child->elem);
+    child->exit_status = -1;
+    list_push_back(&child_list,  &child->elem);
   }
   sema_down(&parent->process_sema);
  // change these
@@ -90,7 +90,10 @@ start_process (void *file_name_)
     sema_up(&cur->process_sema);
     thread_exit ();
   }
-  sema_up(&cur->process_sema);
+  else
+  {
+    sema_up(&cur->process_sema);
+  }
 
   /* Start the user _exec by simulating a return from an
      interrupt, implemented by intr_exit (in
@@ -114,32 +117,21 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid UNUSED) 
 {
-  printf("---------------Entering Process Wait---------------\n");
   struct thread *parent = thread_current(); //Get cur
   struct child_t *child = NULL;
 
   struct list_elem *e;
+  int counter = 0;
   for (e = list_begin(&parent->child_list); e != list_end(&parent->child_list);
        e = list_next(e))
   {
     struct child_t *child_in_list = list_entry(e, struct child_t, elem);
+    counter++;
     if (child_in_list->child_tid == child_tid)
     {
       child = child_in_list;
       break;
     }
-  }
-  printf("Process wait for loop done\n");  
-  if (child == NULL)
-  {
-    printf("Child is NULL.\n");
-  }
-  else
-  {
-      printf("Child tid: %d\n", child->child_tid);
-      printf("Exit bool: %d\n", child->exit);
-      printf("Waited once: %d\n", child->waited_once);
-      printf("Child tid: %d\n", child->exit);
   }
   if (child == NULL) 
   {
@@ -156,14 +148,13 @@ process_wait (tid_t child_tid UNUSED)
   child->waited_once = true;
   list_remove(e);
   return status;
-  printf("---------------Exiting Process Wait---------------\n");
 }
 
 /* Free the current process's resources. */
 void
 process_exit (void)
 {
-  printf("---------------Entering Process Exit---------------\n");
+  // printf("---------------Entering Process Exit---------------\n");
   struct thread *cur = thread_current ();
   uint32_t *pd;
   struct child_t *child = NULL;
@@ -197,7 +188,7 @@ process_exit (void)
       pagedir_activate (NULL);
       pagedir_destroy (pd);
     }
-    printf("---------------Exiting Process Exit---------------\n");
+    // printf("---------------Exiting Process Exit---------------\n");
 }
 
 /* Sets up the CPU for running user code in the current

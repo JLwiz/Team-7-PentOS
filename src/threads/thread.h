@@ -183,6 +183,7 @@ struct child_t
    tid_t child_tid;
    bool exit;
    bool waited_once;
+   bool loaded;
    int exit_status;
    struct list_elem elem;
    struct list_elem allelem;

@@ -186,19 +186,17 @@ tid_t thread_create(const char *name, int priority,
   t = palloc_get_page(PAL_ZERO);
   if (t == NULL)
     return TID_ERROR;
-
   /* Initialize thread. */
   init_thread(t, name, priority);
   tid = t->tid = allocate_tid();
 
-  // It was referencing t which wasn't initialized.
-  // We are not using has it is a pain in the ass.
-  // plus don't want to implement collision avoidance/detection.
-  // hash_init(&t->fd_hash, thread_hash, file_less, NULL);
-  
-  // list_init(&t->file_list); moved to init_thread
-  // list_init(&t->child_list);
-  // sema_init(&t->process_sema, 1);
+  struct child_t *child = malloc(sizeof(struct child_t));
+  child->child_tid = tid;
+  child->exit_status = -1;
+  child->exit = false;
+  child->waited_once = false;
+  child->loaded = false;
+  list_push_back(&thread_current()->child_list, &child->elem);
   t->been_waited_on = false;
 
   /* Stack frame for kernel_thread(). */
@@ -611,23 +609,27 @@ allocate_tid(void)
   return tid;
 }
 
-// unsigned
-// thread_hash(const struct hash_elem *p_, void *aux UNUSED)
-// {
-//   const struct file_entry *p = hash_entry(p_, struct file_entry, hash_elem);
-//   // Has alot of possibilities of collision.
-//   return hash_int(&p->fd);
-// }
+static struct child_t* get_child(tid_t tid)
+{
+  struct thread *parent = thread_current(); //Get cur
+  struct child_t *child = NULL;
 
-// /* Returns true if page a precedes page b. */
-// bool file_less(const struct hash_elem *a_, const struct hash_elem *b_,
-//                void *aux UNUSED)
-// {
-//   const struct file_entry *a = hash_entry(a_, struct file_entry, hash_elem);
-//   const struct file_entry *b = hash_entry(b_, struct file_entry, hash_elem);
-
-//   return a->fd < b->fd;
-// }
+  struct list_elem *e;
+  int counter = 0;
+  for (e = list_begin(&parent->child_list); e != list_end(&parent->child_list);
+       e = list_next(e))
+  {
+    struct child_t *child_in_list = list_entry(e, struct child_t, elem);
+    printf("%d\n", counter);
+    counter++;
+    if (child_in_list->child_tid == tid)
+    {
+      child = child_in_list;
+      break;
+    }
+  }
+  return child;
+}
 
 /* Offset of `stack' member within `struct thread'.
    Used by switch.S, which can't figure it out on its own. */

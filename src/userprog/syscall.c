@@ -43,7 +43,7 @@ syscall_handler(struct intr_frame *f UNUSED)
    * The first argument is in the 32-bit word at the next higher address, and so on.
    * The caller's stack pointer is accessible by the esp member of *f.
    */
-  printf("--------------Entering syscall handler--------------");
+  // printf("--------------Entering syscall handler--------------");
   if (f == NULL)
   {
     printf("Invalid intr_frame\n");
@@ -79,8 +79,8 @@ syscall_handler(struct intr_frame *f UNUSED)
     esp += sizeof(buffer);
     f->eax = exec(buffer);
     break;
-  case SYS_WAIT:
-    pid = (pid_t *)esp;
+  case SYS_WAIT:;
+    pid = (int *)esp;
     esp += sizeof(pid);
     f->eax = wait(*pid);
     break;
@@ -149,7 +149,7 @@ syscall_handler(struct intr_frame *f UNUSED)
     thread_exit();
     break;
   }
-  printf("---------------Exiting Process Wait---------------\n");
+  // printf("---------------Exiting Process Wait---------------\n");
 }
 
 /**
@@ -165,14 +165,14 @@ void halt(void)
 
 void exit(int status)
 {
-  printf("---------------Entering Syscall Exit---------------\n");
+  // printf("---------------Entering Syscall Exit---------------\n");
   /* Getting current thread */
   struct thread *cur = thread_current();
   // TODO: needs to exit the child thread instead of cur thread.
   // should be in process.
   printf("%s: exit(%d)\n", cur->name, status);
   // cur->status = status;
-  printf("---------------Exiting Syscall Exit---------------\n");
+  // printf("---------------Exiting Syscall Exit---------------\n");
   thread_exit();
 }
 
@@ -300,7 +300,7 @@ int filesize(int fd)
 
 int read(int fd, void *buffer, unsigned length UNUSED)
 {
-  printf("made it to read\n");
+  // printf("made it to read\n");
   /* Invalid File Descriptor */
   if (fd < 0)
   {
@@ -335,7 +335,7 @@ int read(int fd, void *buffer, unsigned length UNUSED)
 }
 int write(int fd, const void *buffer, unsigned length)
 {
-  printf("made it to write\n");
+  // printf("made it to write\n");
   /* Invalid File Descriptor */
   if (fd < 0)
   {
