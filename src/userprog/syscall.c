@@ -121,8 +121,7 @@ syscall_handler(struct intr_frame *f UNUSED)
     filename = *(char**) esp;
     esp += sizeof(filename);
     validate_pointer(esp);
-    fd = (int*) open(filename);
-    f->eax = *fd;
+    f->eax = open(filename);
     break;
   case SYS_FILESIZE:
     fd = (int *)esp;
@@ -305,7 +304,6 @@ int open(const char *file)
   struct file *opened_file = filesys_open(file);
   if (opened_file == NULL)
   {
-    printf("COULD NOT OPEN FILE: %s\n", file);
     lock_release(&cur->file_lock);
     return -1;
   }
@@ -313,8 +311,7 @@ int open(const char *file)
   int cur_fd = next_fd;
   next_fd = next_fd + 1;
   entry->file = opened_file;
-  memset(entry->file_name, 0, sizeof(file));
-  strlcpy(entry->file_name, file, sizeof(file));
+  entry->file_name = (char*) file;
   entry->fd = cur_fd;
   struct list file_list = thread_current()->file_list;
   list_push_back(&file_list, &entry->elem);
