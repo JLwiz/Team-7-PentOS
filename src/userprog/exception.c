@@ -151,7 +151,7 @@ page_fault (struct intr_frame *f)
 
   if (user) 
   {
-   struct thread* cur = thread_current();
+   //struct thread* cur = thread_current();
    if (write) 
    {
       //printf("Write fail\n");

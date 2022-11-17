@@ -47,6 +47,20 @@ static void validate_pointer(void *p)
     {
       exit(-1);
     }
+    
+}
+
+
+/* Writes BYTE to user address UDST.
+   UDST must be below PHYS_BASE.
+   Returns true if successful, false if a segfault occurred. */
+static bool
+put_user (uint8_t *udst, uint8_t byte)
+{
+  int error_code;
+  asm ("movl $1f, %0; movb %b2, %1; 1:"
+       : "=&a" (error_code), "=m" (*udst) : "q" (byte));
+  return error_code != -1;
 }
 
 static void
@@ -373,10 +387,7 @@ int read(int fd, void *buffer, unsigned length)
   {
     struct file_entry *fe = get_entry_by_fd(fd);
     if (fe == NULL) return -1;
-<<<<<<< HEAD
     if (filesize(fd) > (int) length) return -1;
-=======
->>>>>>> 64d2bdfa554cd6f748b82290fc731820cb902f88
     int bytes_read = file_read(fe->file, buffer, length);
     return bytes_read;
   }
@@ -386,9 +397,11 @@ int read(int fd, void *buffer, unsigned length)
 }
 int write(int fd, const void *buffer, unsigned length)
 {
+  
+  
+  
   validate_pointer((void *)buffer);
   // validate_pointer(buffer + length);
-  // printf("made it to write\n");
   /* Invalid File Descriptor */
   if (fd < 0)
   {
@@ -397,6 +410,11 @@ int write(int fd, const void *buffer, unsigned length)
   }
 
   int *buff = (int *)buffer;
+  char test  [length];
+
+  validate_pointer(*buff);
+
+
 
   /* Null Buffer */
   if (buff == NULL)
@@ -550,3 +568,4 @@ bool check_if_file_exists_by_fd(int fd)
   }
   return false;
 }
+
