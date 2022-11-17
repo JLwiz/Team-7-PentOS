@@ -343,6 +343,7 @@ int filesize(int fd)
 int read(int fd, void *buffer, unsigned length)
 {
   validate_pointer((void *)buffer);
+  validate_pointer(buffer + length);
   /* Invalid File Descriptor */
   if (fd < 0)
   {
@@ -372,7 +373,8 @@ int read(int fd, void *buffer, unsigned length)
   {
     struct file_entry *fe = get_entry_by_fd(fd);
     if (fe == NULL) return -1;
-    int bytes_read = file_read(fe->file, buffer, 0);
+    if (filesize(fd) > (int) length) return -1;
+    int bytes_read = file_read(fe->file, buffer, length);
     return bytes_read;
   }
   /* Reading From File */
@@ -382,6 +384,7 @@ int read(int fd, void *buffer, unsigned length)
 int write(int fd, const void *buffer, unsigned length)
 {
   validate_pointer((void *)buffer);
+  // validate_pointer(buffer + length);
   // printf("made it to write\n");
   /* Invalid File Descriptor */
   if (fd < 0)
@@ -408,9 +411,14 @@ int write(int fd, const void *buffer, unsigned length)
 
   if (fd > 0)
   {
+    // printf("FD:\t%d\n", fd);
     struct file_entry *fe = get_entry_by_fd(fd);
     if (fe == NULL) return -1;
-    int bytes_write = file_write(fe->file, buffer, 0);
+    if (fe->file == NULL) return -1;
+    // printf("not null\n");
+    // printf("Length:\t%d\n", length);
+    int bytes_write = file_write(fe->file, buffer, length);
+    // printf("Bytes:\t%d\n", bytes_write);
     return bytes_write;
   }
 
