@@ -209,7 +209,7 @@ bool create(const char *file, unsigned initial_size)
     thread_exit(); // FIX wym???
   }
   struct thread *cur = thread_current();
-  while (!lock_try_acquire(&cur->file_lock));
+  lock_acquire(&cur->file_lock);
   bool status = filesys_create(file, initial_size);
   // Don't map here.
   lock_release(&cur->file_lock);
@@ -233,7 +233,7 @@ bool remove(const char *file)
     return false; // FIX wym???
   }
   struct thread *cur = thread_current();
-  while (!lock_try_acquire(&cur->file_lock));
+  lock_acquire(&cur->file_lock);
   bool success = filesys_remove(file);
   if (success)
   {
@@ -258,7 +258,7 @@ int open(const char *file)
 {
   printf("---------------Entering Syscall Open---------------\n");
   struct thread *cur = thread_current();
-  while (!lock_try_acquire(&cur->file_lock));
+  lock_acquire(&cur->file_lock);
   struct file *opened_file = filesys_open(file);
   if (opened_file == NULL)
   {
@@ -291,7 +291,7 @@ int filesize(int fd)
   if (fd < 0)
     return -1;
   struct thread *cur = thread_current();
-  while (!lock_try_acquire(&cur->file_lock));
+  lock_acquire(&cur->file_lock);
   struct file_entry *fe = get_entry_by_fd(fd);
   unsigned size = file_length(fe->file);
   lock_release(&cur->file_lock);
@@ -382,7 +382,7 @@ int write(int fd, const void *buffer, unsigned length)
 void seek(int fd, unsigned position)
 {
   struct thread *cur = thread_current();
-  while (!lock_try_acquire(&cur->file_lock));
+  lock_acquire(&cur->file_lock);
   struct file_entry *fe = get_entry_by_fd(fd);
   if (fe != NULL)
   {
@@ -401,7 +401,7 @@ void seek(int fd, unsigned position)
 unsigned tell(int fd)
 {
   struct thread *cur = thread_current();
-  while (!lock_try_acquire(&cur->file_lock));
+  lock_acquire(&cur->file_lock);
   struct file_entry *fe = get_entry_by_fd(fd);
   if (fe == NULL)
     return 0;
@@ -419,7 +419,7 @@ unsigned tell(int fd)
 void close(int fd)
 {
   struct thread *cur = thread_current();
-  while (!lock_try_acquire(&cur->file_lock));
+  lock_acquire(&cur->file_lock);
   struct file_entry *fe = get_entry_by_fd(fd);
   if (fe != NULL)
   {
