@@ -127,7 +127,7 @@ syscall_handler(struct intr_frame *f UNUSED)
     test_pid = *(int *)esp;
     esp += sizeof(pid);
     validate_pointer(esp);
-    f->eax = process_wait(test_pid);
+    f->eax = wait(test_pid);
     break;
   case SYS_CREATE:
     filename = *(char**) esp;
@@ -232,6 +232,7 @@ void exit(int status)
   // TODO: needs to exit the child thread instead of cur thread.
   // should be in process.
   printf("%s: exit(%d)\n", cur->name, status);
+  cur->exit_status = status;
   // if (status > 0) thread_exit();
   // cur->parent->status = status;
   // printf("---------------Exiting Syscall Exit---------------\n");
@@ -255,7 +256,9 @@ pid_t exec(const char *cmd_line)
 int wait(pid_t pid)
 {
   // This is not working
-  return process_wait( (tid_t) pid);
+  int status = process_wait( (tid_t) pid);
+  //printf("Status in wait syscall: %d\n", status);
+  return status;
 }
 
 /**

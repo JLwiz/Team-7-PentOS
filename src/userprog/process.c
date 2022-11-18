@@ -194,10 +194,11 @@ int process_wait(tid_t child_tid UNUSED)
     sema_down(&child->child_sem); // THIS IS FUCKED. should be apart of child?
   }
   int status = child->exit_status;
+  //printf("Status in process wait before returning is: %d\n", status);
   child->waited_once = true;
   //("About to remove from list\n");
   list_remove(e);
-  //("Returing from process wait, where the cur thread is: %s\n", parent->name);
+  //printf("Returing from process wait, where the cur thread is: %s\n", parent->name);
   return status;
 
 }
@@ -211,7 +212,7 @@ void process_exit(void)
   struct list_elem *e;
   struct thread *parent = cur->parent;
   int counter = 0;
-  //("PProcess_exit with cur_thread: %s\n", cur->name);
+  //printf("PProcess_exit with cur_thread: %s\n", cur->name);
   // //("Parent TID to Find Child: %d\n", cur->tid);
   for (e = list_begin(&parent->child_list); e != list_end(&parent->child_list);
        e = list_next(e))
@@ -226,7 +227,8 @@ void process_exit(void)
   }
   if (child != NULL)
   {
-    child->exit_status = cur->status;
+    child->exit_status = cur->exit_status;
+    //printf("Child status is set to :%d\n", child->exit_status);
     child->exit = true;
   }
   sema_up(&child->child_sem); /* this sema tells wait to unblock. */

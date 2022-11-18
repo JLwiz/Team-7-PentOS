@@ -92,6 +92,7 @@ struct thread
     char name[16];                      /* Name (for debugging purposes). */
     uint8_t *stack;                     /* Saved stack pointer. */
     int priority;                       /* Priority. */
+    int exit_status;
     struct list_elem allelem;           /* List element for all threads list. */
     bool been_waited_on;
     struct thread *parent;
