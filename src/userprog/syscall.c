@@ -370,7 +370,7 @@ int filesize(int fd)
 
 int read(int fd, void *buffer, unsigned length)
 {
-  validate_pointer((void *)buffer);
+  validate_pointer(buffer);
   validate_pointer(buffer + length);
   /* Invalid File Descriptor */
   if (fd < 0)
@@ -399,10 +399,14 @@ int read(int fd, void *buffer, unsigned length)
   // Should probably get the fe once its opened.
   if (fd > 0)
   {
+    // printf("Valid fd starting to build FILE_ENTRY STRUCT\n");
     struct file_entry *fe = get_entry_by_fd(fd);
     if (fe == NULL) return -1;
     if (filesize(fd) > (int) length) return -1;
-    int bytes_read = file_read(fe->file, buffer, length);
+    struct file *file = fe->file;
+    if (file == NULL) return -1;
+    char test[length];
+    int bytes_read = file_read(file, *(char **)buffer, length);
     return bytes_read;
   }
   /* Reading From File */
@@ -538,6 +542,7 @@ struct file_entry *get_entry_by_fd(int fd)
     struct file_entry *cur = list_entry(e, struct file_entry, elem);
     if (cur->fd == fd)
     {
+    
       return cur;
     }
   }
