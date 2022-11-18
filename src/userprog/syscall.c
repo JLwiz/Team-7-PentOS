@@ -47,6 +47,7 @@ static int
 get_user (const uint8_t *uaddr)
 {
   int result;
+  if (!is_user_vaddr(uaddr)) return -1;
   asm ("movl $1f, %0; movzbl %1, %0; 1:"
        : "=&a" (result) : "m" (*uaddr));
   return result;
@@ -54,12 +55,9 @@ get_user (const uint8_t *uaddr)
 
 static void validate_pointer(void *p)
 {
-  if (p == NULL
-      || !is_user_vaddr(p)
-      || pagedir_get_page (thread_current ()->pagedir, p) == NULL
-      )
+  if (get_user == -1)
     {
-      exit(-1);
+      thread_exit();
     }
     
 }
@@ -270,12 +268,12 @@ int wait(pid_t pid)
  */
 bool create(const char *file, unsigned initial_size)
 {
-  validate_pointer((void *)file);
   if (file == NULL)
   {
     //printf("NOT DONE YET: FILE NAME TOO LONG\n");
     exit(-1); // FIX wym???
   }
+  validate_pointer((void *)file);
   if (strlen(file) > 14 || sizeof(file) > 14)
     return 0;
 
@@ -327,8 +325,11 @@ bool remove(const char *file)
  */
 int open(const char *file)
 {
-  validate_pointer((void *)file);
+
   // printf("---------------Entering Syscall Open---------------\n");
+  if (file == NULL) exit(-1);
+
+  validate_pointer((void *)file);
   struct thread *cur = thread_current();
   lock_acquire(&cur->file_lock);
   struct file *opened_file = filesys_open(file);
