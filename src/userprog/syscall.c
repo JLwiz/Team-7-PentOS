@@ -374,6 +374,7 @@ int read(int fd, void *buffer, unsigned length)
   validate_pointer(buffer);
   validate_pointer(buffer + length);
   /* Invalid File Descriptor */
+  if(is_kernel_vaddr(*(char**)buffer)) exit(-1);
   if (fd < 0)
   {
     // printf("Passed Invalid File Descriptor.\n");
@@ -421,7 +422,7 @@ int write(int fd, const void *buffer, unsigned length)
   
   
   validate_pointer((void *)buffer);
-  // validate_pointer(buffer + length);
+  validate_pointer(buffer + length);
   /* Invalid File Descriptor */
   if (fd < 0)
   {
