@@ -401,6 +401,7 @@ int read(int fd, void *buffer, unsigned length)
   if (fd > 0)
   {
     // printf("Valid fd starting to build FILE_ENTRY STRUCT\n");
+    if (length == 0) return 0;
     struct file_entry *fe = get_entry_by_fd(fd);
     if (fe == NULL) return -1;
     if (filesize(fd) > (int) length) return -1;
