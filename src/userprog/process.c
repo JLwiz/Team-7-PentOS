@@ -86,6 +86,7 @@ static void
 start_process(void *file_name_)
 {
   char *file_name = file_name_;
+
   struct intr_frame if_;
   bool success;
   struct thread *cur = thread_current();
@@ -366,12 +367,13 @@ bool load(const char *file_name, void (**eip)(void), void **esp)
   /* Open executable file. */
   lock_acquire(&thread_current()->file_lock);
   file = filesys_open(f_name);
+  
   if (file == NULL)
   {
     //("load: %s: open failed\n", f_name);
     goto done;
   }
-
+  file_deny_write(file);
   /* Read and verify executable header. */
   if (file_read(file, &ehdr, sizeof ehdr) != sizeof ehdr || memcmp(ehdr.e_ident, "\177ELF\1\1\1", 7) || ehdr.e_type != 2 || ehdr.e_machine != 3 || ehdr.e_version != 1 || ehdr.e_phentsize != sizeof(struct Elf32_Phdr) || ehdr.e_phnum > 1024)
   {
@@ -452,9 +454,9 @@ bool load(const char *file_name, void (**eip)(void), void **esp)
 
 done:
   /* We arrive here whether the load is successful or not. */
-  file_close(file);
+  //file_close(file);
   lock_release(&thread_current()->file_lock);
-  
+  free(f_name);
   return success;
 }
 

@@ -344,6 +344,7 @@ int open(const char *file)
     lock_release(&cur->file_lock);
     return -1;
   }
+
   struct file_entry *entry = malloc(sizeof(struct file_entry));
   int cur_fd = cur->next_fd;
   cur->next_fd = cur_fd + 1;
@@ -377,6 +378,7 @@ int filesize(int fd)
 
 int read(int fd, void *buffer, unsigned length)
 {
+  //printf("In read\n");
   validate_pointer(buffer);
   //validate_pointer(buffer + length);
   /* Invalid File Descriptor */
@@ -413,11 +415,16 @@ int read(int fd, void *buffer, unsigned length)
     if (length == 0) return 0;
     struct file_entry *fe = get_entry_by_fd(fd);
     if (fe == NULL) return -1;
-    if (filesize(fd) > (int) length) return -1;
+    // if (filesize(fd) > (int) length) 
+    // {
+    //   printf("Failed here filesize fd is :%d, length is :%d\n", filesize(fd), length);
+    //   return -1;
+    // }
     struct file *file = fe->file;
     if (file == NULL) return -1;
     char test[length];
     int bytes_read = file_read(file, *(char **)buffer, length);
+    //printf("Returning from read\n");
     return bytes_read;
   }
   /* Reading From File */
