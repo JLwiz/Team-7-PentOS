@@ -55,9 +55,9 @@ get_user (const uint8_t *uaddr)
 
 static void validate_pointer(void *p)
 {
-  if (get_user == -1)
+  if (get_user(p) == -1)
     {
-      thread_exit();
+      exit(-1);
     }
     
 }
@@ -173,13 +173,13 @@ syscall_handler(struct intr_frame *f UNUSED)
     fd = (int *)esp;
     esp += sizeof(fd);
     validate_pointer(esp);
-    buffer = esp;
+    buffer = *(char**) esp;
     esp += sizeof(buffer);
     validate_pointer(esp);
     length = (int *)esp;
     esp += sizeof(length);
     validate_pointer(esp);
-    f->eax = write(*fd, buffer, *length);
+    f->eax = write(*fd, (void*)buffer, *length);
     break;
   case SYS_SEEK:
     fd = (int *)esp;
@@ -419,10 +419,28 @@ int read(int fd, void *buffer, unsigned length)
 int write(int fd, const void *buffer, unsigned length)
 {
   
-  
+  struct thread *cur = thread_current ();
+
+
+  // if ((pagedir_get_page(cur->pagedir, fd) == NULL) || !(is_user_vaddr(fd))) 
+  // {
+  //   return -1;
+  // }
+
+  // if ( (pagedir_get_page(cur->pagedir, buffer) == NULL) || !(is_user_vaddr(buffer)) || (get_user(buffer) == -1) || (get_user(buffer+length) == -1) ) 
+  // {
+  //   return -1;
+  // }
+
+  // if ((pagedir_get_page(cur->pagedir, length) == NULL) || !(is_user_vaddr(length))) 
+  // {
+  //   return -1;
+  // }
   
   validate_pointer((void *)buffer);
-  validate_pointer(buffer + length);
+  
+
+
   /* Invalid File Descriptor */
   if (fd < 0)
   {
@@ -430,37 +448,44 @@ int write(int fd, const void *buffer, unsigned length)
     return -1;
   }
 
-  int *buff = (int *)buffer;
-  char test  [length];
+  // int *buff = (int *)buffer;
+  // char* buff_test = (char*) buffer;
 
-  validate_pointer(*buff);
+  validate_pointer(buffer);
 
+  //printf("Buffer: %s and then length: %d\n", (char*) buffer, length);
 
+  validate_pointer(buffer + length);
+
+  //printf("passed buf plus length test\n");
 
   /* Null Buffer */
-  if (buff == NULL)
+  if (buffer == NULL)
   {
-    // printf("Passed A Null Buffer.\n");
+    //printf("Passed A Null Buffer.\n");
     return -1;
   }
-
+  //printf("FD:\t%d\n", fd);
   /* Write To STDOUT */
   if (fd == 1)
   {
-    putbuf((char *)*buff, length);
+    //printf("Writing to stdout.\n");
+    putbuf( (char*) buffer, length);
     return (int)length;
   }
 
+  
+
   if (fd > 0)
   {
-    // printf("FD:\t%d\n", fd);
+    //printf("FD:\t%d\n", fd);
     struct file_entry *fe = get_entry_by_fd(fd);
     if (fe == NULL) return -1;
     if (fe->file == NULL) return -1;
     // printf("not null\n");
     // printf("Length:\t%d\n", length);
     int bytes_write = file_write(fe->file, buffer, length);
-    // printf("Bytes:\t%d\n", bytes_write);
+    //printf("Bytes:\t%d\n", bytes_write);
     return bytes_write;
   }
 
