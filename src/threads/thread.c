@@ -190,15 +190,7 @@ tid_t thread_create(const char *name, int priority,
   /* Initialize thread. */
   init_thread(t, name, priority);
   tid = t->tid = allocate_tid();
-
-  struct child_t *child = malloc(sizeof(struct child_t));
-  child->child_tid = tid;
-  child->exit_status = -1;
-  child->exit = false;
-  child->waited_once = false;
-  child->loaded = false;
-  list_push_back(&thread_current()->child_list, &child->elem);
-  t->been_waited_on = false;
+  
 
   /* Stack frame for kernel_thread(). */
   kf = alloc_frame(t, sizeof *kf);
@@ -214,6 +206,17 @@ tid_t thread_create(const char *name, int priority,
   sf = alloc_frame(t, sizeof *sf);
   sf->eip = switch_entry;
   sf->ebp = 0;
+
+
+  struct child_t *child = malloc(sizeof(struct child_t));
+  child->child_tid = tid;
+  child->exit_status = -1;
+  child->exit = false;
+  child->waited_once = false;
+  child->loaded = false;
+  sema_init(&child->child_sem, 0);
+  list_push_back(&thread_current()->child_list, &child->elem);
+  t->been_waited_on = false;
 
   /* Add to run queue. */
   thread_unblock(t);

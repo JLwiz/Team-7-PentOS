@@ -186,6 +186,7 @@ struct child_t
    bool waited_once;
    bool loaded;
    int exit_status;
+   struct semaphore child_sem;
    struct list_elem elem;
    struct list_elem allelem;
 };

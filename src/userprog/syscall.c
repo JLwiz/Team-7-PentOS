@@ -105,6 +105,7 @@ syscall_handler(struct intr_frame *f UNUSED)
   void *buffer;
   int *length;
   pid_t *pid;
+  int test_pid;
   char *filename;
 
   switch (*syscall_number)
@@ -117,16 +118,16 @@ syscall_handler(struct intr_frame *f UNUSED)
     exit(*status);
     break;
   case SYS_EXEC:
-    buffer = esp;
+    buffer = *(char**)esp;
     esp += sizeof(buffer);
     validate_pointer(esp);
     f->eax = exec(buffer);
     break;
   case SYS_WAIT:;
-    pid = (int *)esp;
+    test_pid = *(int *)esp;
     esp += sizeof(pid);
     validate_pointer(esp);
-    f->eax = wait(*pid);
+    f->eax = process_wait(test_pid);
     break;
   case SYS_CREATE:
     filename = *(char**) esp;
@@ -241,6 +242,8 @@ pid_t exec(const char *cmd_line)
 {
   // TODO
   ASSERT(thread_current()->status == THREAD_RUNNING);
+
+  //printf("Cmd line exec syscall arg: %s\n", cmd_line);
   tid_t return_pid = process_execute(cmd_line);
   if (return_pid == -1) {
     return -1;
@@ -252,7 +255,7 @@ pid_t exec(const char *cmd_line)
 int wait(pid_t pid)
 {
   // This is not working
-  return process_wait(pid);
+  return process_wait( (tid_t) pid);
 }
 
 /**

@@ -44,33 +44,39 @@ tid_t process_execute(const char *file_name)
     return TID_ERROR;
   }
   strlcpy(fn_copy, file_name, PGSIZE);
-
+  //("Fn_copy: %s\n", fn_copy);
   tid = thread_create(fn_copy, PRI_DEFAULT, start_process, fn_copy);
-
+  //("Created child with tid: %d from thread: %s\n", tid, parent->name);
   struct child_t *child = NULL;
 
   if (tid == TID_ERROR)
   {
     palloc_free_page(fn_copy);
   }
-  else
+  
+
+  struct list_elem *e;
+  for(e = list_begin(&parent->child_list); e != list_end(&parent->child_list); e = list_next(e))
   {
-    struct list child_list = parent->file_list;
-    child = malloc(sizeof(*child));
-    if (child == NULL)
-      return -1;
-    child->child_tid = tid;
-    child->exit = false;
-    child->waited_once = false;
-    child->exit_status = -1;
-    list_push_back(&child_list, &child->elem);
+    struct child_t *c = list_entry(e, struct child_t, elem);
+    if(c->child_tid == tid)
+    {
+      child = c;
+      break;
+    }
   }
-  sema_down(&parent->process_sema);
+
+
+
+  //("sleeping this thread: %s in process_execute while we wait for it to load\n", parent->name);
+
+  sema_down(&child->child_sem);
   if (!child->loaded) 
   {
     return -1;
   }
   // change these
+  //("Returning tid: %d\n", tid);
   return tid;
 }
 
@@ -83,6 +89,8 @@ start_process(void *file_name_)
   struct intr_frame if_;
   bool success;
   struct thread *cur = thread_current();
+  struct thread* parent = thread_current()->parent;
+  //("in start_process with the current thread: %s\n", cur->name);
   /* Initialize interrupt frame and load executable. */
   memset(&if_, 0, sizeof if_);
   if_.gs = if_.fs = if_.es = if_.ds = if_.ss = SEL_UDSEG;
@@ -91,6 +99,20 @@ start_process(void *file_name_)
   success = load(file_name, &if_.eip, &if_.esp);
 
   struct child_t *child = NULL;
+
+  // struct list child_list = parent->file_list;
+  // child = malloc(sizeof(*child));
+  // if (child == NULL)
+  //   return -1;
+  // child->child_tid = cur->tid;
+  // child->exit = false;
+  // child->waited_once = false;
+  // child->exit_status = -1;
+  // sema_init(&child->child_sem, 0);
+  // list_push_back(&parent->child_list, &child->elem);
+  // //("Added child with tid: %d to this thread's list: %s\n", cur->tid, parent->name);
+
+  
   struct list_elem *e;
   for (e = list_begin(&cur->parent->child_list); e != list_end(&cur->parent->child_list);
        e = list_next(e))
@@ -99,22 +121,30 @@ start_process(void *file_name_)
     if (child_in_list->child_tid == cur->tid)
     {
       child = child_in_list;
+      //("Found a child in start process with a tid of :%d\n", child->child_tid);
       break;
     }
   }
 
   /* If load failed, quit. */
   palloc_free_page(file_name);
-  if (!success)
+ 
+  if (!success || child == NULL)
   {
-    sema_up(&cur->process_sema);
+    //("Failed success or null child\n");
+    child->loaded = false;
+    sema_up(&child->child_sem);
+    
     thread_exit();
   }
   else
   {
     child->loaded = true;
-    sema_up(&cur->process_sema);
+    //("Waking up parent: %s from thread: %s\n", cur->parent->name, cur->name);
+
+    sema_up(&child->child_sem);
   }
+  //("Done with start-process\n");
   /* Start the user _exec by simulating a return from an
      interrupt, implemented by intr_exit (in
      threads/intr-stubs.S).  Because intr_exit takes all of its
@@ -141,9 +171,9 @@ int process_wait(tid_t child_tid UNUSED)
 {
   struct thread *parent = thread_current(); // Get cur
   struct child_t *child = NULL;
-
+  //("Entering process wait in thread: %s with child_tid: %d\n", parent->name, child_tid);
   struct list_elem *e;
-  for (e = list_begin(&parent->parent->child_list); e != list_end(&parent->parent->child_list);
+  for (e = list_begin(&parent->child_list); e != list_end(&parent->child_list);
        e = list_next(e))
   {
     struct child_t *child_in_list = list_entry(e, struct child_t, elem);
@@ -155,15 +185,19 @@ int process_wait(tid_t child_tid UNUSED)
   }
   if (child == NULL || child->waited_once)
   {
+    //("Either no child was found or the cild has already been waited on\n");
     return -1;
   }
   if (!child->exit)
   {
-    sema_down(&parent->process_sema); // THIS IS FUCKED. should be apart of child?
+    //("Sleeping parent thread: %s\n", parent->name);
+    sema_down(&child->child_sem); // THIS IS FUCKED. should be apart of child?
   }
   int status = child->exit_status;
   child->waited_once = true;
+  //("About to remove from list\n");
   list_remove(e);
+  //("Returing from process wait, where the cur thread is: %s\n", parent->name);
   return status;
 
 }
@@ -177,7 +211,8 @@ void process_exit(void)
   struct list_elem *e;
   struct thread *parent = cur->parent;
   int counter = 0;
-  // printf("Parent TID to Find Child: %d\n", cur->tid);
+  //("PProcess_exit with cur_thread: %s\n", cur->name);
+  // //("Parent TID to Find Child: %d\n", cur->tid);
   for (e = list_begin(&parent->child_list); e != list_end(&parent->child_list);
        e = list_next(e))
   {
@@ -194,7 +229,7 @@ void process_exit(void)
     child->exit_status = cur->status;
     child->exit = true;
   }
-  sema_up(&parent->process_sema); /* this sema tells wait to unblock. */
+  sema_up(&child->child_sem); /* this sema tells wait to unblock. */
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
   pd = cur->pagedir;
@@ -235,7 +270,7 @@ void process_activate(void)
 typedef uint32_t Elf32_Word, Elf32_Addr, Elf32_Off;
 typedef uint16_t Elf32_Half;
 
-/* For use with ELF types in printf(). */
+/* For use with ELF types in //(). */
 #define PE32Wx PRIx32 /* Print Elf32_Word in hexadecimal. */
 #define PE32Ax PRIx32 /* Print Elf32_Addr in hexadecimal. */
 #define PE32Ox PRIx32 /* Print Elf32_Off in hexadecimal. */
@@ -311,6 +346,9 @@ bool load(const char *file_name, void (**eip)(void), void **esp)
   bool success = false;
   int i;
 
+
+  //("In load with cur thread: %s\n", t->name);
+
   char *f_name = (char *)malloc(strlen(file_name) + 1);
   strlcpy(f_name, file_name, strlen(file_name) + 1);
   f_name = strtok_r(f_name, " ", &save_ptr);
@@ -328,15 +366,15 @@ bool load(const char *file_name, void (**eip)(void), void **esp)
   file = filesys_open(f_name);
   if (file == NULL)
   {
-    printf("load: %s: open failed\n", f_name);
+    //("load: %s: open failed\n", f_name);
     goto done;
   }
 
   /* Read and verify executable header. */
   if (file_read(file, &ehdr, sizeof ehdr) != sizeof ehdr || memcmp(ehdr.e_ident, "\177ELF\1\1\1", 7) || ehdr.e_type != 2 || ehdr.e_machine != 3 || ehdr.e_version != 1 || ehdr.e_phentsize != sizeof(struct Elf32_Phdr) || ehdr.e_phnum > 1024)
   {
-    printf("%d %d %d %d %d\n", ehdr.e_type, ehdr.e_machine, ehdr.e_version, ehdr.e_phentsize, ehdr.e_phnum);
-    printf("load: %s: error loading executable\n", file_name);
+    //("%d %d %d %d %d\n", ehdr.e_type, ehdr.e_machine, ehdr.e_version, ehdr.e_phentsize, ehdr.e_phnum);
+    //("load: %s: error loading executable\n", file_name);
     goto done;
   }
 
@@ -401,7 +439,7 @@ bool load(const char *file_name, void (**eip)(void), void **esp)
   /* Set up stack. */
   if (!setup_stack(esp, f_name, save_ptr))
   {
-    printf("Failed to set up stack\n");
+    //("Failed to set up stack\n");
     goto done;
   }
 
@@ -414,6 +452,7 @@ done:
   /* We arrive here whether the load is successful or not. */
   file_close(file);
   lock_release(&thread_current()->file_lock);
+  
   return success;
 }
 
