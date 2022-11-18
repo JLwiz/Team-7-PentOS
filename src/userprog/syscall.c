@@ -372,8 +372,9 @@ int filesize(int fd)
 int read(int fd, void *buffer, unsigned length)
 {
   validate_pointer(buffer);
-  validate_pointer(buffer + length);
+  //validate_pointer(buffer + length);
   /* Invalid File Descriptor */
+  //printf("About to kernal check read\n");
   if(is_kernel_vaddr(*(char**)buffer)) exit(-1);
   if (fd < 0)
   {
@@ -387,10 +388,11 @@ int read(int fd, void *buffer, unsigned length)
     // printf("Passed A Null Buffer.\n");
     return -1;
   }
-
+  
   /* Reading From Keyboard */
   if (fd == 0)
   {
+    printf("Reading from keyboard \n");
     size_t i = 0;
     for (i = 0; i < length; i++)
     {
@@ -401,7 +403,7 @@ int read(int fd, void *buffer, unsigned length)
   // Should probably get the fe once its opened.
   if (fd > 0)
   {
-    // printf("Valid fd starting to build FILE_ENTRY STRUCT\n");
+    //printf("Valid fd starting to build FILE_ENTRY STRUCT\n");
     if (length == 0) return 0;
     struct file_entry *fe = get_entry_by_fd(fd);
     if (fe == NULL) return -1;
