@@ -310,13 +310,14 @@ bool remove(const char *file)
   struct thread *cur = thread_current();
   lock_acquire(&cur->file_lock);
   bool success = filesys_remove(file);
-  if (success)
-  {
+  // if (success)
+  // {
     // TODO: needs to remove it from the list if successful.
-    struct file_entry *fe = get_entry_by_name(file);
-    list_remove(&fe->elem);
-    free(fe);
-  }
+    // struct file_entry *fe = get_entry_by_name(file);
+    // if (&fe->elem == NULL) printf("Null!\n");
+    // list_remove(&fe->elem);
+    // free(fe);
+  // }
   lock_release(&cur->file_lock);
   return success;
 }
