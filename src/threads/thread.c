@@ -42,6 +42,9 @@ static struct thread *initial_thread;
 /* Lock used by allocate_tid(). */
 static struct lock tid_lock;
 
+/* lock for file system */
+struct lock file_lock;
+
 /* Stack frame for kernel_thread(). */
 struct kernel_thread_frame
 {
@@ -106,6 +109,7 @@ void thread_init(void)
   list_init(&ready_list);
   list_init(&all_list);
   list_init(&sleeper_list);
+  lock_init(&file_lock);
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread();
   init_thread(initial_thread, "main", PRI_DEFAULT);
@@ -384,6 +388,15 @@ int thread_get_recent_cpu(void)
   return 0;
 }
 
+void get_file_lock(void)
+{
+  lock_acquire(&file_lock);
+}
+void release_file_lock(void)
+{
+  lock_release(&file_lock);
+}
+
 /* Idle thread.  Executes when no other thread is ready to run.
 
    The idle thread is initially put on the ready list by
@@ -498,7 +511,7 @@ init_thread(struct thread *t, const char *name, int priority)
   list_init(&t->file_list);
   list_init(&t->child_list);
   sema_init(&t->process_sema, 1);
-  lock_init(&t->file_lock);
+  //lock_init(&t->file_lock);
 
   old_level = intr_disable();
   list_push_back(&all_list, &t->allelem);

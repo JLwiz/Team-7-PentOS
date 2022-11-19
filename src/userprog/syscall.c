@@ -226,25 +226,16 @@ void halt(void)
 
 void exit(int status)
 {
-  // printf("---------------Entering Syscall Exit---------------\n");
   struct thread *cur = thread_current();
-  /* Getting current thread */
-  // TODO: needs to exit the child thread instead of cur thread.
-  // should be in process.
   printf("%s: exit(%d)\n", cur->name, status);
   cur->exit_status = status;
-  // if (status > 0) thread_exit();
-  // cur->parent->status = status;
-  // printf("---------------Exiting Syscall Exit---------------\n");
   thread_exit();
 }
 
 pid_t exec(const char *cmd_line)
 {
-  // TODO
   ASSERT(thread_current()->status == THREAD_RUNNING);
 
-  //printf("Cmd line exec syscall arg: %s\n", cmd_line);
   tid_t return_pid = process_execute(cmd_line);
   if (return_pid == -1) {
     return -1;
@@ -255,9 +246,7 @@ pid_t exec(const char *cmd_line)
 
 int wait(pid_t pid)
 {
-  // This is not working
   int status = process_wait( (tid_t) pid);
-  //printf("Status in wait syscall: %d\n", status);
   return status;
 }
 
@@ -276,18 +265,15 @@ bool create(const char *file, unsigned initial_size)
 {
   if (file == NULL)
   {
-    //printf("NOT DONE YET: FILE NAME TOO LONG\n");
-    exit(-1); // FIX wym???
+    exit(-1);
   }
   validate_pointer((void *)file);
   if (strlen(file) > 14 || sizeof(file) > 14)
     return 0;
 
-  struct thread *cur = thread_current();
-  lock_acquire(&cur->file_lock);
+  get_file_lock();
   bool status = filesys_create(file, initial_size);
-  // Don't map here.
-  lock_release(&cur->file_lock);
+  release_file_lock();
   return status;
 }
 
@@ -305,20 +291,11 @@ bool remove(const char *file)
   validate_pointer((void *)file);
   if (strlen(file) > 14)
   {
-    return false; // FIX wym???
+    return false;
   }
-  struct thread *cur = thread_current();
-  lock_acquire(&cur->file_lock);
+  get_file_lock();
   bool success = filesys_remove(file);
-  // if (success)
-  // {
-    // TODO: needs to remove it from the list if successful.
-    // struct file_entry *fe = get_entry_by_name(file);
-    // if (&fe->elem == NULL) printf("Null!\n");
-    // list_remove(&fe->elem);
-    // free(fe);
-  // }
-  lock_release(&cur->file_lock);
+  release_file_lock();
   return success;
 }
 
@@ -338,11 +315,11 @@ int open(const char *file)
 
   validate_pointer((void *)file);
   struct thread *cur = thread_current();
-  lock_acquire(&cur->file_lock);
+  get_file_lock();
   struct file *opened_file = filesys_open(file);
   if (opened_file == NULL)
   {
-    lock_release(&cur->file_lock);
+    release_file_lock();
     return -1;
   }
 
@@ -354,8 +331,7 @@ int open(const char *file)
   entry->fd = cur_fd;
   struct list file_list = thread_current()->file_list;
   list_push_back(&file_list, &entry->elem);
-  lock_release(&cur->file_lock);
-  // printf("---------------Exiting Syscall Open---------------\n");
+  release_file_lock();
   return cur_fd;
 }
 
@@ -369,32 +345,26 @@ int filesize(int fd)
 {
   if (fd < 0)
     return -1;
-  struct thread *cur = thread_current();
-  lock_acquire(&cur->file_lock);
+  get_file_lock();
   struct file_entry *fe = get_entry_by_fd(fd);
   unsigned size = file_length(fe->file);
-  lock_release(&cur->file_lock);
+  release_file_lock();
   return size;
 }
 
 int read(int fd, void *buffer, unsigned length)
 {
-  //printf("In read\n");
   validate_pointer(buffer);
-  //validate_pointer(buffer + length);
-  /* Invalid File Descriptor */
-  //printf("About to kernal check read\n");
+
   if(is_kernel_vaddr(*(char**)buffer)) exit(-1);
   if (fd < 0)
   {
-    // printf("Passed Invalid File Descriptor.\n");
     return -1;
   }
 
   /* Null Buffer */
   if (buffer == NULL)
   {
-    // printf("Passed A Null Buffer.\n");
     return -1;
   }
   
@@ -410,103 +380,71 @@ int read(int fd, void *buffer, unsigned length)
     return i;
   }
   // Should probably get the fe once its opened.
+  /* Reading From File */
   if (fd > 0)
   {
-    //printf("Valid fd starting to build FILE_ENTRY STRUCT\n");
     if (length == 0) return 0;
+    get_file_lock();
     struct file_entry *fe = get_entry_by_fd(fd);
-    if (fe == NULL) return -1;
-    // if (filesize(fd) > (int) length) 
-    // {
-    //   printf("Failed here filesize fd is :%d, length is :%d\n", filesize(fd), length);
-    //   return -1;
-    // }
+    if (fe == NULL) {
+      release_file_lock();
+      return -1;
+    }
+
     struct file *file = fe->file;
-    if (file == NULL) return -1;
-    char test[length];
+    if (file == NULL) {
+      release_file_lock();
+      return -1;
+    }
     int bytes_read = file_read(file, *(char **)buffer, length);
-    //printf("Returning from read\n");
+    release_file_lock();
     return bytes_read;
   }
-  /* Reading From File */
-  // printf("Reading from anything but STDIN not yet implemented.\n");
   return -1;
 }
 int write(int fd, const void *buffer, unsigned length)
-{
-  
-  struct thread *cur = thread_current ();
-
-
-  // if ((pagedir_get_page(cur->pagedir, fd) == NULL) || !(is_user_vaddr(fd))) 
-  // {
-  //   return -1;
-  // }
-
-  // if ( (pagedir_get_page(cur->pagedir, buffer) == NULL) || !(is_user_vaddr(buffer)) || (get_user(buffer) == -1) || (get_user(buffer+length) == -1) ) 
-  // {
-  //   return -1;
-  // }
-
-  // if ((pagedir_get_page(cur->pagedir, length) == NULL) || !(is_user_vaddr(length))) 
-  // {
-  //   return -1;
-  // }
-  
-  validate_pointer((void *)buffer);
-  
-
-
+{ 
   /* Invalid File Descriptor */
   if (fd < 0)
   {
-    // printf("Passed Invalid File Descriptor.\n");
     return -1;
   }
 
-  // int *buff = (int *)buffer;
-  // char* buff_test = (char*) buffer;
+  validate_pointer((void *)buffer);
 
-  validate_pointer(buffer);
-
-  //printf("Buffer: %s and then length: %d\n", (char*) buffer, length);
-
-  validate_pointer(buffer + length);
-
-  //printf("passed buf plus length test\n");
+  validate_pointer(((void *)buffer) + length);
 
   /* Null Buffer */
   if (buffer == NULL)
   {
-    //printf("Passed A Null Buffer.\n");
     return -1;
   }
-  //printf("FD:\t%d\n", fd);
   /* Write To STDOUT */
   if (fd == 1)
   {
-    //printf("Writing to stdout.\n");
     putbuf( (char*) buffer, length);
     return (int)length;
   }
 
-  
-
+  /* Writing To File */
   if (fd > 0)
   {
-    //printf("FD:\t%d\n", fd);
+    get_file_lock();
     struct file_entry *fe = get_entry_by_fd(fd);
-    if (fe == NULL) return -1;
-    if (fe->file == NULL) return -1;
-    // printf("not null\n");
-    // printf("Length:\t%d\n", length);
+    if (fe == NULL)
+    {
+      release_file_lock();
+      return -1;
+    }
+    if (fe->file == NULL) 
+    {
+      release_file_lock();
+      return -1;
+      }
     int bytes_write = file_write(fe->file, buffer, length);
-    //printf("Bytes:\t%d\n", bytes_write);
+    release_file_lock();
     return bytes_write;
   }
-
-  /* Writing To File */
-  // printf("Writing to anything but STDOUT not yet implemented.\n");
   return -1;
 }
 
@@ -520,14 +458,13 @@ int write(int fd, const void *buffer, unsigned length)
  */
 void seek(int fd, unsigned position)
 {
-  struct thread *cur = thread_current();
-  lock_acquire(&cur->file_lock);
+  get_file_lock();
   struct file_entry *fe = get_entry_by_fd(fd);
   if (fe != NULL)
   {
     file_seek(fe->file, position);
   }
-  lock_release(&cur->file_lock);
+  release_file_lock();
 }
 
 /**
@@ -539,13 +476,12 @@ void seek(int fd, unsigned position)
  */
 unsigned tell(int fd)
 {
-  struct thread *cur = thread_current();
-  lock_acquire(&cur->file_lock);
+  get_file_lock();
   struct file_entry *fe = get_entry_by_fd(fd);
   if (fe == NULL)
     return 0;
   unsigned offset = file_tell(fe->file);
-  lock_release(&cur->file_lock);
+  release_file_lock();
   return offset;
 }
 
@@ -557,8 +493,7 @@ unsigned tell(int fd)
  */
 void close(int fd)
 {
-  struct thread *cur = thread_current();
-  lock_acquire(&cur->file_lock);
+  get_file_lock();
   struct file_entry *fe = get_entry_by_fd(fd);
   if (fe != NULL)
   {
@@ -566,7 +501,7 @@ void close(int fd)
     list_remove(&fe->elem);
     free(fe);
   }
-  lock_release(&cur->file_lock);
+  release_file_lock();
 }
 
 /**
@@ -614,21 +549,5 @@ struct file_entry *get_entry_by_name(const char *name)
     }
   }
   return NULL;
-}
-
-bool check_if_file_exists_by_fd(int fd)
-{
-  struct list_elem *e;
-  struct list file_list = thread_current()->parent->file_list;
-  for (e = list_begin(&file_list); e != list_end(&file_list);
-       e = list_next(e))
-  {
-    struct file_entry *cur = list_entry(e, struct file_entry, elem);
-    if (cur->fd == fd)
-    {
-      return true;
-    }
-  }
-  return false;
 }
 

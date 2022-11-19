@@ -90,7 +90,6 @@ start_process(void *file_name_)
   struct intr_frame if_;
   bool success;
   struct thread *cur = thread_current();
-  struct thread* parent = thread_current()->parent;
   //("in start_process with the current thread: %s\n", cur->name);
   /* Initialize interrupt frame and load executable. */
   memset(&if_, 0, sizeof if_);
@@ -100,19 +99,6 @@ start_process(void *file_name_)
   success = load(file_name, &if_.eip, &if_.esp);
 
   struct child_t *child = NULL;
-
-  // struct list child_list = parent->file_list;
-  // child = malloc(sizeof(*child));
-  // if (child == NULL)
-  //   return -1;
-  // child->child_tid = cur->tid;
-  // child->exit = false;
-  // child->waited_once = false;
-  // child->exit_status = -1;
-  // sema_init(&child->child_sem, 0);
-  // list_push_back(&parent->child_list, &child->elem);
-  // //("Added child with tid: %d to this thread's list: %s\n", cur->tid, parent->name);
-
   
   struct list_elem *e;
   for (e = list_begin(&cur->parent->child_list); e != list_end(&cur->parent->child_list);
@@ -365,7 +351,7 @@ bool load(const char *file_name, void (**eip)(void), void **esp)
 
   // EDITED FROM ORIGINAL, FILE_NAME --> TOKEN
   /* Open executable file. */
-  lock_acquire(&thread_current()->file_lock);
+  get_file_lock();
   file = filesys_open(f_name);
   
   if (file == NULL)
@@ -454,8 +440,7 @@ bool load(const char *file_name, void (**eip)(void), void **esp)
 
 done:
   /* We arrive here whether the load is successful or not. */
-  //file_close(file);
-  lock_release(&thread_current()->file_lock);
+  release_file_lock();
   free(f_name);
   return success;
 }

@@ -104,7 +104,7 @@ struct thread
 
     struct list child_list; /* List of all opened files*/
 
-    struct lock file_lock; /*lock used for syscalls*/
+    //struct lock file_lock; /*lock used for syscalls*/
     
 
     /* Shared between thread.c and synch.c. */
@@ -143,7 +143,8 @@ void thread_start (void);
 
 void thread_tick (void);
 void thread_print_stats (void);
-
+void get_file_lock(void);
+void release_file_lock(void);
 typedef void thread_func (void *aux);
 tid_t thread_create (const char *name, int priority, thread_func *, void *);
 
