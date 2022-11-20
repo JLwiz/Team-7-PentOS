@@ -30,8 +30,6 @@ Ernest Tussey <tusseyel@dukes.jmu.edu>
 >> A1: Copy here the declaration of each new or changed `struct' or
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
-Added:
-
 In thread struct (in thread.h):
   pid_t pid - used to identify processes.
   int exit_status - used to hold the exit status of the thread.
@@ -111,7 +109,7 @@ clean to occur and prevent resources from being held by dead processes.
 >> fails, so it cannot return before the new executable has completed
 >> loading.  How does your code ensure this?  How is the load
 >> success/failure status passed back to the thread that calls "exec"?
-We assert that processes thatcalled exec are running and we await process_execute()
+We assert that processes that called exec are running and we await process_execute()
 to return. If -1 is returned then we return -1 from the exec() method.
 
 >> A7: Consider parent process P with child process C.  How do you
@@ -121,10 +119,13 @@ to return. If -1 is returned then we return -1 from the exec() method.
 >> terminates without waiting, before C exits?  After C exits?  Are
 >> there any special cases?
 
+
 ---- RATIONALE ----
 
 >> A8: Why did you choose to implement access to user memory from the
 >> kernel in the way that you did?
+
+
 
 >> A9: What advantages or disadvantages can you see to your design
 >> for file descriptors?
