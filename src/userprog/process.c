@@ -24,7 +24,7 @@
 static thread_func start_process NO_RETURN;
 static bool load(const char *cmdline, void (**eip)(void), void **esp);
 static unsigned char COMMAND_LINE_LIMIT = 128;
-static struct child_t *get_child_by_tid(tid_t tid);
+// static struct child_t *get_child_by_tid(tid_t tid);
 
 /* Starts a new thread running a user program loaded from
    FILENAME.  The new thread may be scheduled (and may even exit)
@@ -198,7 +198,7 @@ void process_exit(void)
   struct child_t *child = NULL;
   struct list_elem *e;
   struct thread *parent = cur->parent;
-  int counter = 0;
+  // int counter = 0;
   //printf("PProcess_exit with cur_thread: %s\n", cur->name);
   // //("Parent TID to Find Child: %d\n", cur->tid);
   for (e = list_begin(&parent->child_list); e != list_end(&parent->child_list);
@@ -210,7 +210,7 @@ void process_exit(void)
       child = child_in_list;
       break;
     }
-    counter++;
+    // counter++;
   }
   if (child != NULL)
   {
