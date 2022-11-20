@@ -30,6 +30,39 @@ Ernest Tussey <tusseyel@dukes.jmu.edu>
 >> A1: Copy here the declaration of each new or changed `struct' or
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
+Added:
+
+In thread struct (in thread.h):
+  pid_t pid - used to identify processes
+  int exit_status - used to hold the exit status of the thread
+  bool been_waited_on - used to signal if this thread has been waited on
+  struct thread parent - the threads parent
+  struct list file_list - a list of files opened by only that thread
+  struct list child_list - a list of the threads children
+  struct list_elem child_threads - child thread list element
+  struct file file - a struct to hold file information
+  int next_fd - the next file descriptor to be used
+  struct semaphore process_sema - a semaphore used when processes need to load or wait
+
+struct file_entry (in thread.h) - the file information
+  int fd - the file descriptor value of the file
+  struct file file - the file struct 
+  char file_name - the file name
+  struct list_elem allelem - 
+  struct list_elem elem - 
+
+struct child_t (in thread.h) -
+  tid_t child_tid - 
+  bool exit - 
+  bool waited_once - 
+  bool loaded - 
+  int exit_status - 
+  struct semaphore child_sem - 
+  struct list_elem elem - 
+  struct list_elem allelem - 
+
+struct lock file_lock (in thread.c) - 
+
 
 >> A2: Describe how file descriptors are associated with open files.
 >> Are file descriptors unique within the entire OS or just within a
