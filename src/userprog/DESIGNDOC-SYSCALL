@@ -79,12 +79,13 @@ to a provided pointer to a buffer at a prescibed length or size.
 Both methods ensure the buffer region is not located in a region
 of the kernel. From there a lock is acquired to prevent multiple
 processes from accessing the file data simultaneously. The number
-of bytes read or written is returned.
+of bytes read or written is returned, which may be different than
+the passed length.
 
 >> A4: Briefly describe your implementation of the "wait" system call
 >> and how it interacts with process termination.
 wait() calls process_wait() by the passed pid_t - which is casted to a tid_t. Following the process wait, its status is returned. The terminated status is returned from wait().
-This notifies the caller of the associated status when a process has been terminated.
+This notifies the caller of the associated status when a process has finished running.
 
 >> A5: Any access to user program memory at a user-specified address
 >> can fail due to a bad pointer value.  Such accesses must cause the
@@ -99,11 +100,8 @@ This notifies the caller of the associated status when a process has been termin
 >> allocated resources (locks, buffers, etc.) are freed?  In a few
 >> paragraphs, describe the strategy or strategies you adopted for
 >> managing these issues.  Give an example.
-The approach taken in our implementation of pintos when these bad pointers are passed in to exit the process. 
-When a page fault occurs the parent
-process(s) are notified and process is told to exit with its normal routine.
-When an exit occurs in syscall.c it still triggers in exception handling to shut down the process and notifed its parent process(s). This strategy allows 
-clean to occur and prevent resources from being held by dead processes.
+
+When a page fault occurs from a bad pointer, the parent process(es) are notified and and the process exits with code (-1) through the syscall exit function. Pointers are verified by checking their addresses in user memory with the validate_pointer(void *p) function in syscall.c. If a user interrupt, particularly a page fault, occurs due to a pointer in user memory that made its way through, the thread silently exits. This strategy allows the OS to 'clean-up' and open resources that would otherwise be held by a dead process(es).
 
 ---- SYNCHRONIZATION ----
 
@@ -111,8 +109,8 @@ clean to occur and prevent resources from being held by dead processes.
 >> fails, so it cannot return before the new executable has completed
 >> loading.  How does your code ensure this?  How is the load
 >> success/failure status passed back to the thread that calls "exec"?
-We assert that processes thatcalled exec are running and we await process_execute()
-to return. If -1 is returned then we return -1 from the exec() method.
+We assert that the thread calling exec is running and we await process_execute()
+to return the new processes tid or -1 if the load failed on the newly made child process. We insure that the exec call does not continue without loading the child process correctly, by using a child assigned semaphore for critical section operations such as starting, loading, waiting, and exiting the process. In the case of exec, the semaphore is assigned on child thread creation and a sema_down call is made to freeze execution until start_process finishes loading it into memory; which then calls sema_up on success or failure in order to notify exec of it's completion.
 
 >> A7: Consider parent process P with child process C.  How do you
 >> ensure proper synchronization and avoid race conditions when P
@@ -120,11 +118,13 @@ to return. If -1 is returned then we return -1 from the exec() method.
 >> that all resources are freed in each case?  How about when P
 >> terminates without waiting, before C exits?  After C exits?  Are
 >> there any special cases?
+We use thread/process specific semaphores. For instance, P's semaphore will block in wait until it's exit is called, while C's semaphore will do the same but will operate independently of P's semaphore as to create seperate sections of mutual exclusion. Process threads also have an associated file struct that is freed upon calling and completing process_exit through our syscall close operation. We did not identify any special cases, which may be why we weren't passing the no-vm/multi-oom test.
 
 ---- RATIONALE ----
 
 >> A8: Why did you choose to implement access to user memory from the
 >> kernel in the way that you did?
+We allowed the kernel to have access to user memory in order to check pointers for valid memory spaces in which user programs can be ran, this provided safety for the kernel memory as kernel specific data and information would not be overwritten by a user operation. If we didn't provide this protection the kernel information would be corrupted on many different syscalls, and in a more extreme case, could allow a user to read kernel data when they should not be allowed to. By designating the user address space with the validate_pointer function in every syscall, theres a more clear distinction between user and kernel memory which allows them to be abstracted away from eachother.
 
 >> A9: What advantages or disadvantages can you see to your design
 >> for file descriptors?
@@ -132,4 +132,6 @@ We utilized a list for file descriptors. We iterate over the list until the file
 with the fd is found or NULL if no file is found. When a file is closed the file
 struct is removed from the list. The advantage to this method is that it allows
 fds to be stored and easily accessible. The disadvantage is the loss of O(1)
-lookup when iterating over a list compared to using a hashmap for lookup.
+lookup when iterating over a list compared to using a hashmap for lookup. Though early on we decided that using a list would be much easier than the hashmap since we had previous experience.
+
+Another disadvantage is that when a file is freed, the fd is not reassigned. This will create the potential for fd overflow if enough files are created; however, it makes them much easier to assign until that point is reached, and given the size limitations of pintos we didn't think that overflow limit could be easily reached. In our implementation, fd's are also thread specific such that thread(A) may have 5 assigned fds for its associated file_list, but in no way does that affect how thread(B) builds it's file_list and assigns it's fds.
