@@ -34,14 +34,28 @@ Ernest Tussey <tusseyel@dukes.jmu.edu>
 >> A2: Describe how file descriptors are associated with open files.
 >> Are file descriptors unique within the entire OS or just within a
 >> single process?
+File descriptors are used to identify a file in a list and is unique to
+the process. File descriptors start at 2 and increment up as a file is
+open. When files are closed their file descriptors are removed from the
+list.
 
 ---- ALGORITHMS ----
 
 >> A3: Describe your code for reading and writing user data from the
 >> kernel.
+read() and write() locate a file by its file descriptor (recieved
+following a call to open()). From there they either write or read
+to a provided pointer to a buffer at a prescibed length or size. 
+Both methods ensure the buffer region is not located in a region
+of the kernel. From there a lock is acquired to prevent multiple
+processes from accessing the file data simultaneously. The number
+of bytes read or written is returned.
 
 >> A4: Briefly describe your implementation of the "wait" system call
 >> and how it interacts with process termination.
+wait() calls process_wait() by the passed tid_t. Following the process
+wait its status us returned. The terminated status is returned from wait()
+This assists the caller when a process has been terminated.
 
 >> A5: Any access to user program memory at a user-specified address
 >> can fail due to a bad pointer value.  Such accesses must cause the
@@ -56,6 +70,12 @@ Ernest Tussey <tusseyel@dukes.jmu.edu>
 >> allocated resources (locks, buffers, etc.) are freed?  In a few
 >> paragraphs, describe the strategy or strategies you adopted for
 >> managing these issues.  Give an example.
+The approach taken in our implementation of pintos when these bad pointers
+are pasted is to exit the process. When a page fault occurs the parent
+process(s) are notified and process is told to exit with its normal routine.
+When an exit occurs in syscall.c it still triggers in exception handling to
+shut down the process and notifed its parent process(s). This strategy allows 
+clean to occur and prevent resources from being held by dead processes.
 
 ---- SYNCHRONIZATION ----
 
@@ -63,6 +83,8 @@ Ernest Tussey <tusseyel@dukes.jmu.edu>
 >> fails, so it cannot return before the new executable has completed
 >> loading.  How does your code ensure this?  How is the load
 >> success/failure status passed back to the thread that calls "exec"?
+We assert that processes thatcalled exec are running and we await process_execute()
+to return. If -1 is returned then we return -1 from the exec() method.
 
 >> A7: Consider parent process P with child process C.  How do you
 >> ensure proper synchronization and avoid race conditions when P
@@ -78,3 +100,8 @@ Ernest Tussey <tusseyel@dukes.jmu.edu>
 
 >> A9: What advantages or disadvantages can you see to your design
 >> for file descriptors?
+We utilized a list for file descriptors. We iterate over the list until the file
+with the fd is found or NULL if no file is found. When a file is closed the file
+struct is removed from the list. The advantage to this method is that it allows
+fds to be stored and easily accessible. The disadvantage is the loss of O(1)
+lookup when iterating over a list compared to using a hashmap for lookup.
