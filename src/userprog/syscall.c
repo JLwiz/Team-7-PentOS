@@ -493,15 +493,22 @@ unsigned tell(int fd)
  */
 void close(int fd)
 {
-  get_file_lock();
   struct file_entry *fe = get_entry_by_fd(fd);
-  if (fe != NULL)
+  if (fe == NULL)
   {
+    return;
+    
+  } 
+  else 
+  {
+    get_file_lock();
     file_close(fe->file);
+    release_file_lock();
     list_remove(&fe->elem);
     free(fe);
+
   }
-  release_file_lock();
+  
 }
 
 /**

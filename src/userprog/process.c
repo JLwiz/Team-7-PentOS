@@ -218,6 +218,10 @@ void process_exit(void)
     //printf("Child status is set to :%d\n", child->exit_status);
     child->exit = true;
   }
+
+  get_file_lock();
+  file_close(cur->file);
+  release_file_lock();
   sema_up(&child->child_sem); /* this sema tells wait to unblock. */
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
@@ -437,9 +441,15 @@ bool load(const char *file_name, void (**eip)(void), void **esp)
   *eip = (void (*)(void))ehdr.e_entry;
 
   success = true;
+  t->file = file;
+  
 
 done:
   /* We arrive here whether the load is successful or not. */
+  if (!success) 
+  {
+    file_close(file);
+  }
   release_file_lock();
   free(f_name);
   return success;
@@ -660,22 +670,22 @@ install_page(void *upage, void *kpage, bool writable)
   return (pagedir_get_page(t->pagedir, upage) == NULL && pagedir_set_page(t->pagedir, upage, kpage, writable));
 }
 
-static struct child_t *get_child_by_tid(tid_t tid)
-{
-  struct thread *cur = thread_current(); // Get cur
-  struct thread *parent = cur->parent;
+// static struct child_t *get_child_by_tid(tid_t tid)
+// {
+//   struct thread *cur = thread_current(); // Get cur
+//   struct thread *parent = cur->parent;
 
-  struct list_elem *e;
-  int counter = 0;
-  for (e = list_begin(&parent->child_list); e != list_end(&parent->child_list);
-       e = list_next(e))
-  {
-    struct child_t *child_in_list = list_entry(e, struct child_t, elem);
-    counter++;
-    if (child_in_list->child_tid == tid)
-    {
-      return child_in_list;
-    }
-  }
-  return NULL;
-}
+//   struct list_elem *e;
+//   int counter = 0;
+//   for (e = list_begin(&parent->child_list); e != list_end(&parent->child_list);
+//        e = list_next(e))
+//   {
+//     struct child_t *child_in_list = list_entry(e, struct child_t, elem);
+//     counter++;
+//     if (child_in_list->child_tid == tid)
+//     {
+//       return child_in_list;
+//     }
+//   }
+//   return NULL;
+// }

@@ -157,12 +157,12 @@ page_fault (struct intr_frame *f)
    if (write) 
    {
       //printf("Write fail\n");
-      process_exit();
+      //process_exit();
       exit(-1);
    } else 
    {
       //printf("Read fail\n");
-      process_exit();
+      //process_exit();
       exit(-1);
    }
   } 
