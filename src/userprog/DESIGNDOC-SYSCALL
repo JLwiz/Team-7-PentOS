@@ -33,35 +33,32 @@ Ernest Tussey <tusseyel@dukes.jmu.edu>
 Added:
 
 In thread struct (in thread.h):
-  pid_t pid - used to identify processes
-  int exit_status - used to hold the exit status of the thread
-  bool been_waited_on - used to signal if this thread has been waited on
-  struct thread parent - the threads parent
-  struct list file_list - a list of files opened by only that thread
-  struct list child_list - a list of the threads children
-  struct list_elem child_threads - child thread list element
-  struct file file - a struct to hold file information
-  int next_fd - the next file descriptor to be used
-  struct semaphore process_sema - a semaphore used when processes need to load or wait
+  pid_t pid - used to identify processes.
+  int exit_status - used to hold the exit status of the thread.
+  bool been_waited_on - used to signal if this thread has been waited on.
+  struct thread parent - the threads parent.
+  struct list file_list - a list of files opened by only that thread.
+  struct list child_list - a list of the threads children.
+  struct list_elem child_threads - child thread list element.
+  struct file file - a struct to hold file information.
+  int next_fd - the next file descriptor to be used.
 
-struct file_entry (in thread.h) - the file information
-  int fd - the file descriptor value of the file
-  struct file file - the file struct 
-  char file_name - the file name
-  struct list_elem allelem - 
-  struct list_elem elem - 
+struct file_entry (in thread.h) - the file data of a list entry.
+  int fd - the file descriptor value of the file.
+  struct file file - the file struct .
+  char file_name - the file name.
+  struct list_elem elem - the file element in the file_list.
 
-struct child_t (in thread.h) -
-  tid_t child_tid - 
-  bool exit - 
-  bool waited_once - 
-  bool loaded - 
-  int exit_status - 
-  struct semaphore child_sem - 
-  struct list_elem elem - 
-  struct list_elem allelem - 
+struct child_t (in thread.h) - the thread data of a child thread.
+  tid_t child_tid - the tid of the child process.
+  bool exit - used to signal if this thread has exited.
+  bool waited_once - used to signal if this thread has waited once.
+  bool loaded - used to signal if this thread has been loaded.
+  int exit_status - used to hold this threads exit value.
+  struct semaphore child_sem - used to synchronize child processes when loading or waiting is needed.
+  struct list_elem elem - the child element in the child_list.
 
-struct lock file_lock (in thread.c) - 
+struct lock file_lock (in thread.c) - used to ensure two processes aren't accessing the files at the same time.
 
 
 >> A2: Describe how file descriptors are associated with open files.
