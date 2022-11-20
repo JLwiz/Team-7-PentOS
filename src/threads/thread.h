@@ -121,8 +121,6 @@ struct thread
     
     /* amount of ticks till woken */
     int64_t ticks_left;
-
-    struct semaphore process_sema;
     
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
@@ -180,7 +178,6 @@ struct file_entry
     int fd;
     struct file *file;
     char *file_name;
-    struct list_elem allelem;
     struct list_elem elem;
 };
 
@@ -193,7 +190,6 @@ struct child_t
    int exit_status;
    struct semaphore child_sem;
    struct list_elem elem;
-   struct list_elem allelem;
 };
 
 #endif /* threads/thread.h */
