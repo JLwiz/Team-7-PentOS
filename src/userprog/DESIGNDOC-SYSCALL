@@ -70,7 +70,7 @@ struct lock file_lock (in thread.c) -
 File descriptors are used to identify a file in a list and is unique to
 the process. File descriptors start at 2 and increment up as a file is
 open. When files are closed their file descriptors are removed from the
-list.
+list, but those newly opened fds are not recycled.
 
 ---- ALGORITHMS ----
 
@@ -86,9 +86,8 @@ of bytes read or written is returned.
 
 >> A4: Briefly describe your implementation of the "wait" system call
 >> and how it interacts with process termination.
-wait() calls process_wait() by the passed tid_t. Following the process
-wait its status us returned. The terminated status is returned from wait()
-This assists the caller when a process has been terminated.
+wait() calls process_wait() by the passed pid_t - which is casted to a tid_t. Following the process wait, its status is returned. The terminated status is returned from wait().
+This notifies the caller of the associated status when a process has been terminated.
 
 >> A5: Any access to user program memory at a user-specified address
 >> can fail due to a bad pointer value.  Such accesses must cause the
@@ -103,11 +102,10 @@ This assists the caller when a process has been terminated.
 >> allocated resources (locks, buffers, etc.) are freed?  In a few
 >> paragraphs, describe the strategy or strategies you adopted for
 >> managing these issues.  Give an example.
-The approach taken in our implementation of pintos when these bad pointers
-are pasted is to exit the process. When a page fault occurs the parent
+The approach taken in our implementation of pintos when these bad pointers are passed in to exit the process. 
+When a page fault occurs the parent
 process(s) are notified and process is told to exit with its normal routine.
-When an exit occurs in syscall.c it still triggers in exception handling to
-shut down the process and notifed its parent process(s). This strategy allows 
+When an exit occurs in syscall.c it still triggers in exception handling to shut down the process and notifed its parent process(s). This strategy allows 
 clean to occur and prevent resources from being held by dead processes.
 
 ---- SYNCHRONIZATION ----
