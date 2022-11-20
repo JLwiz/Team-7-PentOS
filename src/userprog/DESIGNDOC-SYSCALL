@@ -30,8 +30,6 @@ Ernest Tussey <tusseyel@dukes.jmu.edu>
 >> A1: Copy here the declaration of each new or changed `struct' or
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
-Added:
-
 In thread struct (in thread.h):
   pid_t pid - used to identify processes.
   int exit_status - used to hold the exit status of the thread.
@@ -120,11 +118,14 @@ to return the new processes tid or -1 if the load failed on the newly made child
 >> there any special cases?
 We use thread/process specific semaphores. For instance, P's semaphore will block in wait until it's exit is called, while C's semaphore will do the same but will operate independently of P's semaphore as to create seperate sections of mutual exclusion. Process threads also have an associated file struct that is freed upon calling and completing process_exit through our syscall close operation. We did not identify any special cases, which may be why we weren't passing the no-vm/multi-oom test.
 
+
 ---- RATIONALE ----
 
 >> A8: Why did you choose to implement access to user memory from the
 >> kernel in the way that you did?
 We allowed the kernel to have access to user memory in order to check pointers for valid memory spaces in which user programs can be ran, this provided safety for the kernel memory as kernel specific data and information would not be overwritten by a user operation. If we didn't provide this protection the kernel information would be corrupted on many different syscalls, and in a more extreme case, could allow a user to read kernel data when they should not be allowed to. By designating the user address space with the validate_pointer function in every syscall, theres a more clear distinction between user and kernel memory which allows them to be abstracted away from eachother.
+
+
 
 >> A9: What advantages or disadvantages can you see to your design
 >> for file descriptors?
