@@ -92,6 +92,7 @@ struct thread
     enum thread_status status;          /* Thread state. */
     char name[16];                      /* Name (for debugging purposes). */
     uint8_t *stack;                     /* Saved stack pointer. */
+    int initial_priority;               /* The Priority the thread was created with */
     int priority;                       /* Priority. */
     int exit_status;
     struct list_elem allelem;           /* List element for all threads list. */
@@ -100,6 +101,7 @@ struct thread
    //  struct hash_elem file_descriptors;  /* List element for filedescriptor list*/
    //  struct hash fd_hash;
 
+    struct list lock_list;
     struct list file_list; /* List of all opened files*/
 
 
