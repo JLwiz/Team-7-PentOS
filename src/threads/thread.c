@@ -352,9 +352,22 @@ void thread_foreach(thread_action_func *func, void *aux)
 /* Sets the current thread's priority to NEW_PRIORITY. */
 void thread_set_priority(int new_priority)
 {
+  struct list_elem *e;
   struct thread *current = thread_current();
-
   thread_current()->priority = new_priority;
+
+  for (e = list_begin(&ready_list); e != list_end(&ready_list);
+       e = list_next(e))
+  {
+    struct thread *t = list_entry(e, struct thread, elem);
+    if (thread_current()->priority < t->priority) 
+    {
+      thread_yield();
+    }
+    
+  }
+
+  
 }
 
 /* Returns the current thread's priority. */
@@ -513,7 +526,7 @@ init_thread(struct thread *t, const char *name, int priority)
   t->next_fd = 2;
   list_init(&t->file_list);
   list_init(&t->child_list);
-  list_init(&t->lock_list)
+  list_init(&t->lock_list);
 
   old_level = intr_disable();
   list_push_back(&all_list, &t->allelem);

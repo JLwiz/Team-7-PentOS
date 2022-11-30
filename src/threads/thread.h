@@ -102,6 +102,8 @@ struct thread
    //  struct hash fd_hash;
 
     struct list lock_list;
+
+
     struct list file_list; /* List of all opened files*/
 
 
@@ -123,6 +125,9 @@ struct thread
     
     /* amount of ticks till woken */
     int64_t ticks_left;
+    
+
+    struct thread* prio_recipient ;
     
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
