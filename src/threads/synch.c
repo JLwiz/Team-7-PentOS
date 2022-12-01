@@ -196,9 +196,35 @@ lock_acquire (struct lock *lock)
   ASSERT (!intr_context ());
   ASSERT (!lock_held_by_current_thread (lock));
 
-  sema_down (&lock->semaphore);
-  lock->holder = thread_current ();
-  list_push_back(&thread_current()->lock_list, &lock->owned_elem);
+  bool success = lock_try_acquire(lock);
+
+  if (success) 
+  {
+    sema_down (&lock->semaphore);
+    lock->holder = thread_current ();
+    list_push_back(&thread_current()->lock_list, &lock->owned_elem);
+  } 
+  else 
+  {
+    //Donation
+    int counter = 1;
+    struct thread* lock_holder = lock->holder;
+    lock->holder->priority = thread_current()->priority + counter;
+    struct thread* recipient = lock_holder->prio_recipient;
+    while (recipient != NULL) 
+    {
+      counter++;
+      recipient->priority = thread_current()->priority + counter;
+      recipient = recipient->prio_recipient;
+      //add to the recipient
+      //get next reciepent
+    }
+    
+    thread_sleep();
+
+  }
+
+  
   
 }
 
@@ -232,8 +258,20 @@ lock_release (struct lock *lock)
 {
   ASSERT (lock != NULL);
   ASSERT (lock_held_by_current_thread (lock));
-
+  struct thread* cur = thread_current();
   lock->holder = NULL;
+  //Releasing the lock with donation priority
+  intr_disable();
+
+  cur->priority = cur->initial_priority;
+  //Ensure list is ordered by priority
+  struct thread* next_to_run = list_entry(list_pop_front(&lock->waiters);
+  
+
+
+
+
+
   sema_up (&lock->semaphore);
 }
 
