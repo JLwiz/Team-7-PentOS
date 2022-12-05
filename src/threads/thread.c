@@ -389,8 +389,15 @@ void thread_update_donate(struct thread *thread)
   intr_set_level(prev_lvl);
 }
 
+bool is_highest_priority(struct thread *thread)
+{
+  struct list_elem *list_f = list_front(&ready_list);
+  int max_priority = list_entry(list_f, struct thread, elem)->priority;
+  return thread->priority > max_priority;
+}
 
-/* Returns the current thread's donated priority. */
+
+/* Returns the current thread's DONATED priority. */
 int thread_get_priority(void)
 {
   return thread_current()->priority;
