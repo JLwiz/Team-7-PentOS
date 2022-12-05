@@ -642,6 +642,13 @@ allocate_tid(void)
   return tid;
 }
 
+void thread_donate(struct thread* thread)
+{
+  enum intr_level prev_lvl = intr_disable();
+  // TODO: Iterate through list
+
+  intr_set_level(prev_lvl);
+}
 
 /* Offset of `stack' member within `struct thread'.
    Used by switch.S, which can't figure it out on its own. */
