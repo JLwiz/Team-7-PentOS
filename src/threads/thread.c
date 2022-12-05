@@ -78,6 +78,7 @@ static void *alloc_frame(struct thread *, size_t size);
 static void schedule(void);
 void thread_schedule_tail(struct thread *prev);
 static tid_t allocate_tid(void);
+void thread_update_donate(struct thread *thread);
 bool list_less_func_sort_by_priority(const struct list_elem *a,
                                      const struct list_elem *b,
                                      UNUSED void *aux);
@@ -358,9 +359,8 @@ void thread_set_priority(int new_priority)
   {
     enum intr_level prev_lvl = intr_disable();
     struct list_elem *e;
-    struct thread *current = thread_current();
-    thread_current()->priority = new_priority;
-
+    struct thread *cur = thread_current();
+    cur->priority = new_priority;
     for (e = list_begin(&ready_list); e != list_end(&ready_list);
         e = list_next(e))
     {
@@ -375,7 +375,7 @@ void thread_set_priority(int new_priority)
   }
 }
 
-void thread_updated_donate(struct thread *thread)
+void thread_update_donate(struct thread *thread)
 {
   if (list_empty(&thread->lock_list))
     return;
