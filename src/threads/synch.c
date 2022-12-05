@@ -29,6 +29,7 @@
 #include "threads/synch.h"
 #include <stdio.h>
 #include <string.h>
+#include <list.h>
 #include "threads/interrupt.h"
 #include "threads/thread.h"
 
@@ -197,6 +198,7 @@ lock_acquire (struct lock *lock)
   ASSERT (!intr_context ());
   ASSERT (!lock_held_by_current_thread (lock));
 
+
   bool success = lock_try_acquire(lock);
 
   if (success) 
@@ -221,7 +223,7 @@ lock_acquire (struct lock *lock)
       //get next reciepent
     }
     
-    thread_sleep();
+    thread_yield();
 
   }
 
@@ -241,11 +243,15 @@ lock_try_acquire (struct lock *lock)
   bool success;
 
   ASSERT (lock != NULL);
+
+  intr_disable(); //See Rubric 
   ASSERT (!lock_held_by_current_thread (lock));
 
   success = sema_try_down (&lock->semaphore);
   if (success)
     lock->holder = thread_current ();
+  intr_enable();
+
   return success;
 }
 
@@ -260,15 +266,14 @@ lock_release (struct lock *lock)
   ASSERT (lock != NULL);
   ASSERT (lock_held_by_current_thread (lock));
   struct thread* cur = thread_current();
+  struct list_elem *e;
   lock->holder = NULL;
   //Releasing the lock with donation priority
   intr_disable();
 
   cur->priority = cur->initial_priority;
   //Ensure list is ordered by priority
-  struct list_elem *next_wait;
-  next_wait = list_pop_front(&lock->waiters);
-  struct thread* next_to_run = list_entry(next_wait, struct thread, elem);
+  struct thread* next_to_run = list_entry(list_pop_front(&lock->waiters), struct thread, elem);
   
 
 
