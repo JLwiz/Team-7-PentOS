@@ -203,7 +203,7 @@ lock_acquire (struct lock *lock)
   {
     sema_down (&lock->semaphore);
     lock->holder = thread_current ();
-    list_push_back(&thread_current()->lock_list, &lock->owned_elem);
+    list_push_back(&thread_current()->lock_list, &lock->elem);
   } 
   else 
   {
@@ -266,7 +266,9 @@ lock_release (struct lock *lock)
 
   cur->priority = cur->initial_priority;
   //Ensure list is ordered by priority
-  struct thread* next_to_run = list_entry(list_pop_front(&lock->waiters);
+  struct list_elem *next_wait;
+  next_wait = list_pop_front(&lock->waiters);
+  struct thread* next_to_run = list_entry(next_wait, struct thread, elem);
   
 
 
