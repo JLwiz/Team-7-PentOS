@@ -354,20 +354,43 @@ void thread_foreach(thread_action_func *func, void *aux)
 /* Sets the current thread's priority to NEW_PRIORITY. */
 void thread_set_priority(int new_priority)
 {
-  struct list_elem *e;
-  struct thread *current = thread_current();
-  thread_current()->priority = new_priority;
-
-  for (e = list_begin(&ready_list); e != list_end(&ready_list);
-       e = list_next(e))
+  if (new_priority >= PRI_MIN && new_priority <= PRI_MAX)
   {
-    struct thread *t = list_entry(e, struct thread, elem);
-    if (thread_current()->priority < t->priority)
+    enum intr_level prev_lvl = intr_disable();
+    struct list_elem *e;
+    struct thread *current = thread_current();
+    thread_current()->priority = new_priority;
+
+    for (e = list_begin(&ready_list); e != list_end(&ready_list);
+        e = list_next(e))
     {
-      thread_yield();
+      struct thread *t = list_entry(e, struct thread, elem);
+      if (thread_current()->priority < t->priority)
+      {
+        thread_yield();
+      }
     }
+    thread_update_donate(thread_current());
+    intr_set_level(prev_lvl);
   }
 }
+
+void thread_updated_donate(struct thread *thread)
+{
+  if (list_empty(&thread->lock_list))
+    return;
+
+  enum intr_level prev_lvl = intr_disable();
+
+  struct list_elem *list_f = list_front(&thread->lock_list);
+  int max_list_prio = list_entry(list_f, struct lock, elem)->priority;
+
+  if (max_list_prio > thread->initial_priority)
+    thread->priority = max_list_prio;
+
+  intr_set_level(prev_lvl);
+}
+
 
 /* Returns the current thread's priority. */
 int thread_get_priority(void)
@@ -640,35 +663,6 @@ allocate_tid(void)
   return tid;
 }
 
-void thread_donate(struct thread *thread)
-{
-  if (list_empty(&thread->lock_list))
-    return;
-
-  enum intr_level prev_lvl = intr_disable();
-
-  struct list_elem *list_f = list_front(&thread->lock_list);
-  int max_list_prio = list_entry(list_f, struct lock, elem)->priority;
-
-  if (max_list_prio > thread->initial_priority)
-    thread->priority = max_list_prio;
-
-  intr_set_level(prev_lvl);
-}
-
-void set_priority(int priority)
-{
-  if (priority >= PRI_MIN && priority <= PRI_MAX)
-  {
-    enum intr_level prev_lvl = intr_disable();
-    struct thread *cur = thread_current();
-    cur->priority = priority;
-    // TODO: update lock
-    thread_donate(cur);
-
-    intr_set_level(prev_lvl);
-  }
-}
 
 /* Offset of `stack' member within `struct thread'.
    Used by switch.S, which can't figure it out on its own. */
