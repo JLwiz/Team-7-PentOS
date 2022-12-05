@@ -361,6 +361,7 @@ void thread_set_priority(int new_priority)
     struct list_elem *e;
     struct thread *cur = thread_current();
     cur->priority = new_priority;
+    // idk feels like this should be locks.
     for (e = list_begin(&ready_list); e != list_end(&ready_list);
         e = list_next(e))
     {
