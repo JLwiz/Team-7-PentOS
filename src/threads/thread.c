@@ -383,7 +383,7 @@ void thread_update_donate(struct thread *thread)
   struct list_elem *list_f = list_front(&thread->lock_list);
   int max_list_prio = list_entry(list_f, struct lock, elem)->priority;
 
-  if (max_list_prio > thread->initial_priority)
+  if (max_list_prio > thread->priority)
     thread->priority = max_list_prio;
 
   intr_set_level(prev_lvl);
@@ -679,5 +679,5 @@ bool list_less_func_sort_by_priority(const struct list_elem *a,
 {
   struct thread *a_prio = list_entry(a, struct thread, elem);
   struct thread *b_prio = list_entry(b, struct thread, elem);
-  return a_prio->priority > b_prio->priority;
+  return a_prio->priority >= b_prio->priority;
 }

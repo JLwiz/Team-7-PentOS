@@ -221,10 +221,10 @@ lock_acquire (struct lock *lock)
       recipient = recipient->prio_recipient;
       //add to the recipient
       //get next reciepent
+      
     }
     
     thread_yield();
-
   }
 
   
