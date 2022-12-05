@@ -78,6 +78,9 @@ static void *alloc_frame(struct thread *, size_t size);
 static void schedule(void);
 void thread_schedule_tail(struct thread *prev);
 static tid_t allocate_tid(void);
+bool list_less_func_sort_by_priority(const struct list_elem *a,
+                                     const struct list_elem *b,
+                                     UNUSED void *aux);
 
 struct list *get_ready_list(void)
 {
@@ -194,7 +197,6 @@ tid_t thread_create(const char *name, int priority,
   /* Initialize thread. */
   init_thread(t, name, priority);
   tid = t->tid = allocate_tid();
-  
 
   /* Stack frame for kernel_thread(). */
   kf = alloc_frame(t, sizeof *kf);
@@ -210,7 +212,6 @@ tid_t thread_create(const char *name, int priority,
   sf = alloc_frame(t, sizeof *sf);
   sf->eip = switch_entry;
   sf->ebp = 0;
-
 
   struct child_t *child = malloc(sizeof(struct child_t));
   child->child_tid = tid;
@@ -259,7 +260,8 @@ void thread_unblock(struct thread *t)
 
   old_level = intr_disable();
   ASSERT(t->status == THREAD_BLOCKED);
-  list_push_back(&ready_list, &t->elem); //change this to a list order sort
+  list_insert_ordered(&ready_list, &t->elem, list_less_func_sort_by_priority, NULL);
+  // list_push_back(&ready_list, &t->elem); //change this to a list order sort
   t->status = THREAD_READY;
   intr_set_level(old_level);
 }
@@ -327,7 +329,7 @@ void thread_yield(void)
 
   old_level = intr_disable();
   if (cur != idle_thread)
-    list_push_back(&ready_list, &cur->elem); //Changes this to a list order sort
+    list_push_back(&ready_list, &cur->elem); // Changes this to a list order sort
   cur->status = THREAD_READY;
   schedule();
   intr_set_level(old_level);
@@ -360,14 +362,11 @@ void thread_set_priority(int new_priority)
        e = list_next(e))
   {
     struct thread *t = list_entry(e, struct thread, elem);
-    if (thread_current()->priority < t->priority) 
+    if (thread_current()->priority < t->priority)
     {
       thread_yield();
     }
-    
   }
-
-  
 }
 
 /* Returns the current thread's priority. */
@@ -502,7 +501,6 @@ get_thread(tid_t tid)
   }
   return NULL;
 }
-
 
 /* Does basic initialization of T as a blocked thread named
    NAME. */
@@ -642,16 +640,17 @@ allocate_tid(void)
   return tid;
 }
 
-void thread_donate(struct thread* thread)
+void thread_donate(struct thread *thread)
 {
-  if(list_empty(&thread->lock_list)) return;
+  if (list_empty(&thread->lock_list))
+    return;
 
   enum intr_level prev_lvl = intr_disable();
 
   struct list_elem *list_f = list_front(&thread->lock_list);
   int max_list_prio = list_entry(list_f, struct lock, elem)->priority;
-  
-  if (max_list_prio > thread->initial_priority) 
+
+  if (max_list_prio > thread->initial_priority)
     thread->priority = max_list_prio;
 
   intr_set_level(prev_lvl);
@@ -675,11 +674,9 @@ void set_priority(int priority)
    Used by switch.S, which can't figure it out on its own. */
 uint32_t thread_stack_ofs = offsetof(struct thread, stack);
 
-
-
-bool list_less_func_sort_by_priority (const struct list_elem *a,
-                             const struct list_elem *b,
-                             void *aux) 
+bool list_less_func_sort_by_priority(const struct list_elem *a,
+                                     const struct list_elem *b,
+                                     UNUSED void *aux)
 {
   struct thread *a_prio = list_entry(a, struct thread, elem);
   struct thread *b_prio = list_entry(b, struct thread, elem);
