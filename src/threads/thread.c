@@ -674,3 +674,14 @@ void set_priority(int priority)
 /* Offset of `stack' member within `struct thread'.
    Used by switch.S, which can't figure it out on its own. */
 uint32_t thread_stack_ofs = offsetof(struct thread, stack);
+
+
+
+bool list_less_func_sort_by_priority (const struct list_elem *a,
+                             const struct list_elem *b,
+                             void *aux) 
+{
+  struct thread *a_prio = list_entry(a, struct thread, elem);
+  struct thread *b_prio = list_entry(b, struct thread, elem);
+  return a_prio->priority > b_prio->priority;
+}
