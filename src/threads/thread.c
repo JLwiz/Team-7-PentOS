@@ -650,6 +650,20 @@ void thread_donate(struct thread* thread)
   intr_set_level(prev_lvl);
 }
 
+void set_priority(int priority)
+{
+  if (priority >= PRI_MIN && priority <= PRI_MAX)
+  {
+    enum intr_level prev_lvl = intr_disable();
+    struct thread *cur = thread_current();
+    cur->priority = priority;
+    // TODO: update lock
+    thread_donate(cur);
+
+    intr_set_level(prev_lvl);
+  }
+}
+
 /* Offset of `stack' member within `struct thread'.
    Used by switch.S, which can't figure it out on its own. */
 uint32_t thread_stack_ofs = offsetof(struct thread, stack);
