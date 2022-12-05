@@ -372,6 +372,8 @@ void thread_set_priority(int new_priority)
       }
     }
     thread_update_donate(thread_current());
+
+    list_sort(&ready_list, list_less_func_sort_by_priority, NULL);
     intr_set_level(prev_lvl);
   }
 }
@@ -393,7 +395,7 @@ void thread_update_donate(struct thread *thread)
 }
 
 
-/* Returns the current thread's priority. */
+/* Returns the current thread's donated priority. */
 int thread_get_priority(void)
 {
   return thread_current()->priority;
