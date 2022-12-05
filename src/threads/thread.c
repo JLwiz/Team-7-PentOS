@@ -642,11 +642,6 @@ allocate_tid(void)
   return tid;
 }
 
-less_thread_priority(struct list_elem *thread_a_elem, struct list_elem *thread_b_elem){
-  struct thread *thread_a = list_entry(thread_a_elem, struct thread, elem);
-  struct thread *thread_b = list_entry(thread_b_elem, struct thread, elem);
-  return thread_a->priority < thread_b->priority;
-}
 
 /* Offset of `stack' member within `struct thread'.
    Used by switch.S, which can't figure it out on its own. */
