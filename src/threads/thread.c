@@ -644,8 +644,15 @@ allocate_tid(void)
 
 void thread_donate(struct thread* thread)
 {
+  if(list_empty(&thread->lock_list)) return;
+
   enum intr_level prev_lvl = intr_disable();
-  // TODO: Iterate through list
+
+  struct list_elem *list_f = list_front(&thread->lock_list);
+  int max_list_prio = list_entry(list_f, struct lock, elem)->priority;
+  
+  if (max_list_prio > thread->initial_priority) 
+    thread->priority = max_list_prio;
 
   intr_set_level(prev_lvl);
 }
