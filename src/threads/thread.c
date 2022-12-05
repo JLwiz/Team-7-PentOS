@@ -259,7 +259,7 @@ void thread_unblock(struct thread *t)
 
   old_level = intr_disable();
   ASSERT(t->status == THREAD_BLOCKED);
-  list_push_back(&ready_list, &t->elem);
+  list_push_back(&ready_list, &t->elem); //change this to a list order sort
   t->status = THREAD_READY;
   intr_set_level(old_level);
 }
@@ -327,7 +327,7 @@ void thread_yield(void)
 
   old_level = intr_disable();
   if (cur != idle_thread)
-    list_push_back(&ready_list, &cur->elem);
+    list_push_back(&ready_list, &cur->elem); //Changes this to a list order sort
   cur->status = THREAD_READY;
   schedule();
   intr_set_level(old_level);
