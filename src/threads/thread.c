@@ -358,22 +358,17 @@ void thread_set_priority(int new_priority)
   if (new_priority >= PRI_MIN && new_priority <= PRI_MAX)
   {
     enum intr_level prev_lvl = intr_disable();
-    struct list_elem *e;
     struct thread *cur = thread_current();
     cur->priority = new_priority;
-    // idk feels like this should be locks.
-    for (e = list_begin(&ready_list); e != list_end(&ready_list);
-        e = list_next(e))
-    {
-      struct thread *t = list_entry(e, struct thread, elem);
-      if (thread_current()->priority < t->priority)
-      {
-        thread_yield();
-      }
-    }
-    thread_update_donate(thread_current());
+    struct list_elem *list_f = list_front(&ready_list);
 
+    thread_update_donate(thread_current());
     list_sort(&ready_list, list_less_func_sort_by_priority, NULL);
+
+    int max_priority = list_entry(list_f, struct thread, elem)->priority;
+    if (!(cur->priority > max_priority))
+      thread_yield();
+
     intr_set_level(prev_lvl);
   }
 }
