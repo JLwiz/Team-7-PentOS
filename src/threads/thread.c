@@ -111,6 +111,8 @@ void thread_init(void)
 {
   ASSERT(intr_get_level() == INTR_OFF);
 
+  printf("In thread_init\n");
+
   lock_init(&tid_lock);
   list_init(&ready_list);
   list_init(&all_list);
@@ -121,6 +123,8 @@ void thread_init(void)
   init_thread(initial_thread, "main", PRI_DEFAULT);
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid();
+
+  printf("Returning from thread_init\n");
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
@@ -556,6 +560,7 @@ init_thread(struct thread *t, const char *name, int priority)
   ASSERT(PRI_MIN <= priority && priority <= PRI_MAX);
   ASSERT(name != NULL);
 
+  printf("In init_thread\n");
   memset(t, 0, sizeof *t);
   t->status = THREAD_BLOCKED;
   strlcpy(t->name, name, sizeof t->name);
@@ -572,6 +577,7 @@ init_thread(struct thread *t, const char *name, int priority)
   old_level = intr_disable();
   list_push_back(&all_list, &t->allelem);
   intr_set_level(old_level);
+  printf("Returning from init_thread\n");
 }
 
 /* Allocates a SIZE-byte frame at the top of thread T's stack and
@@ -595,10 +601,10 @@ alloc_frame(struct thread *t, size_t size)
 static struct thread *
 next_thread_to_run(void)
 {
-  printf("List size: %d\n", list_size(&ready_list));
+  //printf("List size: %d\n", list_size(&ready_list));
   if (list_empty(&ready_list))
   {
-    printf("LIST EMPTY\nNEXT THREAD TO RUN FAIL ln 593\n");
+    //printf("LIST EMPTY\nNEXT THREAD TO RUN FAIL ln 593\n");
     return idle_thread;
   }
   else
@@ -664,7 +670,7 @@ schedule(void)
 
   ASSERT(intr_get_level() == INTR_OFF);
   ASSERT(cur->status != THREAD_RUNNING);
-  if (next == NULL) printf("THREAD NULL DUMMY\n");
+  //if (next == NULL) printf("THREAD NULL DUMMY\n");
   ASSERT(is_thread(next));
 
   if (cur != next)

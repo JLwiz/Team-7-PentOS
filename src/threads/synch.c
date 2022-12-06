@@ -177,10 +177,11 @@ void
 lock_init (struct lock *lock)
 {
   ASSERT (lock != NULL);
-
+  //printf("creating a lock in console_init\n");
   lock->holder = NULL;
   lock->priority = 0;
   sema_init (&lock->semaphore, 1);
+  list_init(&lock->waiters);
 }
 
 /* Acquires LOCK, sleeping until it becomes available if
@@ -194,46 +195,51 @@ lock_init (struct lock *lock)
 void
 lock_acquire (struct lock *lock)
 {
+  // ASSERT (lock != NULL);
+  // ASSERT (!intr_context ());
+  // ASSERT (!lock_held_by_current_thread (lock));
+
+
+  // bool success = lock_try_acquire(lock);
+  // if (success) 
+  // {
+  //   sema_down (&lock->semaphore);
+  //   lock->holder = thread_current ();
+  //   list_push_back(&thread_current()->lock_list, &lock->elem);
+  // } 
+  // else 
+  // {
+  //   //Donation
+  //   int counter = 0;
+  //   struct thread* lock_holder = lock->holder;
+  //   struct lock *cur_lock = lock;
+  //   if (lock_holder != NULL)
+  //   {
+  //     lock->holder->priority = thread_current()->priority + counter;
+  //     struct thread* recipient = lock_holder->prio_recipient;
+  //     while (recipient != NULL) 
+  //     {
+  //       counter++;
+  //       recipient->priority = thread_current()->priority + counter;
+  //       recipient = recipient->prio_recipient;
+  //       //add to the recipient
+  //       //get next reciepent
+        
+  //     }
+  //     sort_ready_list();
+  //   }
+  //   sema_down(&lock->semaphore);
+  //   list_push_back(&thread_current()->lock_list, &lock->elem);
+  //   lock->holder = thread_current();
+  //   lock->priority = thread_current()->priority;
+  //   thread_yield();
+  // }
   ASSERT (lock != NULL);
   ASSERT (!intr_context ());
   ASSERT (!lock_held_by_current_thread (lock));
 
-
-  bool success = lock_try_acquire(lock);
-  if (success) 
-  {
-    sema_down (&lock->semaphore);
-    lock->holder = thread_current ();
-    list_push_back(&thread_current()->lock_list, &lock->elem);
-  } 
-  else 
-  {
-    //Donation
-    int counter = 0;
-    struct thread* lock_holder = lock->holder;
-    struct lock *cur_lock = lock;
-    if (lock_holder != NULL)
-    {
-      lock->holder->priority = thread_current()->priority + counter;
-      struct thread* recipient = lock_holder->prio_recipient;
-      while (recipient != NULL) 
-      {
-        counter++;
-        recipient->priority = thread_current()->priority + counter;
-        recipient = recipient->prio_recipient;
-        //add to the recipient
-        //get next reciepent
-        
-      }
-      sort_ready_list();
-    }
-    sema_down(&lock->semaphore);
-    list_push_back(&thread_current()->lock_list, &lock->elem);
-    lock->holder = thread_current();
-    lock->priority = thread_current()->priority;
-    thread_yield();
-  }
-
+  sema_down (&lock->semaphore);
+  lock->holder = thread_current ();
   
   
 }
@@ -251,13 +257,13 @@ lock_try_acquire (struct lock *lock)
 
   ASSERT (lock != NULL);
 
-  intr_disable(); //See Rubric 
+  //intr_disable(); //See Rubric 
   ASSERT (!lock_held_by_current_thread (lock));
 
   success = sema_try_down (&lock->semaphore);
   if (success)
     lock->holder = thread_current ();
-  intr_enable();
+  //intr_enable();
 
   return success;
 }
@@ -270,18 +276,21 @@ lock_try_acquire (struct lock *lock)
 void
 lock_release (struct lock *lock) 
 {
+  // ASSERT (lock != NULL);
+  // ASSERT (lock_held_by_current_thread (lock));
+  // struct thread* cur = thread_current();
+  // struct list_elem *e;
+  // lock->holder = NULL;
+  // //Releasing the lock with donation priority
+  // intr_disable();
+
+  // cur->priority = cur->initial_priority;
+  // //Ensure list is ordered by priority
+  // struct thread* next_to_run = list_entry(list_pop_front(&lock->waiters), struct thread, elem);
   ASSERT (lock != NULL);
   ASSERT (lock_held_by_current_thread (lock));
-  struct thread* cur = thread_current();
-  struct list_elem *e;
-  lock->holder = NULL;
-  //Releasing the lock with donation priority
-  intr_disable();
 
-  cur->priority = cur->initial_priority;
-  //Ensure list is ordered by priority
-  struct thread* next_to_run = list_entry(list_pop_front(&lock->waiters), struct thread, elem);
-  
+  lock->holder = NULL;
 
 
 
