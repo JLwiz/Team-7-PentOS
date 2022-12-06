@@ -363,7 +363,7 @@ void thread_set_priority(int new_priority)
     struct list_elem *list_f = list_front(&ready_list);
 
     thread_update_donate(thread_current());
-    list_sort(&ready_list, list_less_func_sort_by_priority, NULL);
+    sort_ready_list();
 
     int max_priority = list_entry(list_f, struct thread, elem)->priority;
     if (!(cur->priority > max_priority))
@@ -372,6 +372,13 @@ void thread_set_priority(int new_priority)
     intr_set_level(prev_lvl);
   }
 }
+
+
+void sort_ready_list()
+{
+  list_sort(&ready_list, list_less_func_sort_by_priority, NULL);
+}
+
 
 void thread_update_donate(struct thread *thread)
 {
@@ -383,7 +390,7 @@ void thread_update_donate(struct thread *thread)
   struct list_elem *list_f = list_front(&thread->lock_list);
   int max_list_prio = list_entry(list_f, struct lock, elem)->priority;
 
-  if (max_list_prio > thread->priority)
+  if (max_list_prio > thread->initial_priority)
     thread->priority = max_list_prio;
 
   intr_set_level(prev_lvl);
@@ -393,7 +400,7 @@ bool is_highest_priority(struct thread *thread)
 {
   struct list_elem *list_f = list_front(&ready_list);
   int max_priority = list_entry(list_f, struct thread, elem)->priority;
-  return thread->priority > max_priority;
+  return thread->priority >= max_priority;
 }
 
 

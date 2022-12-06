@@ -200,7 +200,6 @@ lock_acquire (struct lock *lock)
 
 
   bool success = lock_try_acquire(lock);
-
   if (success) 
   {
     sema_down (&lock->semaphore);
@@ -210,20 +209,28 @@ lock_acquire (struct lock *lock)
   else 
   {
     //Donation
-    int counter = 1;
+    int counter = 0;
     struct thread* lock_holder = lock->holder;
-    lock->holder->priority = thread_current()->priority + counter;
-    struct thread* recipient = lock_holder->prio_recipient;
-    while (recipient != NULL) 
+    struct lock *cur_lock = lock;
+    if (lock_holder != NULL)
     {
-      counter++;
-      recipient->priority = thread_current()->priority + counter;
-      recipient = recipient->prio_recipient;
-      //add to the recipient
-      //get next reciepent
-      
+      lock->holder->priority = thread_current()->priority + counter;
+      struct thread* recipient = lock_holder->prio_recipient;
+      while (recipient != NULL) 
+      {
+        counter++;
+        recipient->priority = thread_current()->priority + counter;
+        recipient = recipient->prio_recipient;
+        //add to the recipient
+        //get next reciepent
+        
+      }
+      sort_ready_list();
     }
-    
+    sema_down(&lock->semaphore);
+    list_push_back(&thread_current()->lock_list, &lock->elem);
+    lock->holder = thread_current();
+    lock->priority = thread_current()->priority;
     thread_yield();
   }
 
