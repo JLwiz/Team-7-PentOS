@@ -101,7 +101,11 @@ struct thread
    //  struct hash_elem file_descriptors;  /* List element for filedescriptor list*/
    //  struct hash fd_hash;
 
+    struct list_elem lock_elem;
+    
     struct list lock_list;
+
+    struct semaphore lock_waiting_sema;
 
 
     struct list file_list; /* List of all opened files*/

@@ -115,6 +115,7 @@ void thread_init(void)
   lock_init(&tid_lock);
   list_init(&ready_list);
   list_init(&all_list);
+  
   list_init(&sleeper_list);
   lock_init(&file_lock);
   /* Set up a thread structure for the running thread. */
@@ -158,8 +159,9 @@ void thread_tick(void)
     kernel_ticks++;
 
   /* Enforce preemption. */
-  if (++thread_ticks >= TIME_SLICE)
+  if (++thread_ticks >= TIME_SLICE) {
     intr_yield_on_return();
+  }
 }
 
 /* Prints thread statistics. */
@@ -225,6 +227,7 @@ tid_t thread_create(const char *name, int priority,
   child->waited_once = false;
   child->loaded = false;
   sema_init(&child->child_sem, 0);
+  sema_init(&child->child_sem, 1);
   list_push_back(&thread_current()->child_list, &child->elem);
   t->been_waited_on = false;
   /* Add to run queue. */
@@ -374,12 +377,12 @@ void thread_set_priority(int new_priority)
     cur->priority = new_priority;
     struct list_elem *list_f = list_front(&ready_list);
 
-    //thread_update_donate(thread_current());
-    //sort_ready_list();
+    thread_update_donate(thread_current());
+    sort_ready_list();
     struct thread* max_prior = list_entry(list_f, struct thread, elem);
     int max_priority = max_prior->priority;
     //printf("max prior which is thread %s and I am thread %s: %d\n", max_prior->name, cur->name, max_priority);
-    //if (cur->priority < max_priority)
+    if (cur->priority < max_priority)
       thread_yield();
 
     intr_set_level(prev_lvl);
@@ -572,6 +575,7 @@ init_thread(struct thread *t, const char *name, int priority)
   t->magic = THREAD_MAGIC;
   t->parent = running_thread();
   t->next_fd = 2;
+  sema_init(&t->lock_waiting_sema, 1);
   list_init(&t->file_list);
   list_init(&t->child_list);
   list_init(&t->lock_list);
@@ -704,5 +708,5 @@ bool list_less_func_sort_by_priority(const struct list_elem *a,
 {
   struct thread *a_prio = list_entry(a, struct thread, elem);
   struct thread *b_prio = list_entry(b, struct thread, elem);
-  return a_prio->priority > b_prio->priority;
+  return a_prio->priority >= b_prio->priority;
 }
