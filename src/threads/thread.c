@@ -262,7 +262,7 @@ void thread_unblock(struct thread *t)
   old_level = intr_disable();
   ASSERT(t->status == THREAD_BLOCKED);
   list_insert_ordered(&ready_list, &t->elem, list_less_func_sort_by_priority, NULL);
-  // list_push_back(&ready_list, &t->elem); //change this to a list order sort
+  //list_push_back(&ready_list, &t->elem); //change this to a list order sort
   t->status = THREAD_READY;
   intr_set_level(old_level);
 }
@@ -330,7 +330,8 @@ void thread_yield(void)
 
   old_level = intr_disable();
   if (cur != idle_thread)
-    list_push_back(&ready_list, &cur->elem); // Changes this to a list order sort
+    list_insert_ordered(&ready_list, &cur->elem, list_less_func_sort_by_priority, NULL);
+    //list_push_back(&ready_list, &cur->elem); // Changes this to a list order sort
   cur->status = THREAD_READY;
   schedule();
   intr_set_level(old_level);
@@ -588,14 +589,16 @@ static struct thread *
 next_thread_to_run(void)
 {
   if (list_empty(&ready_list))
+  {
+    printf("LIST EMPTY\nNEXT THREAD TO RUN FAIL ln 593\n");
     return idle_thread;
+  }
   else
     return list_entry(list_pop_front(&ready_list), struct thread, elem);
 }
 
 /* Completes a thread switch by activating the new thread's page
    tables, and, if the previous thread is dying, destroying it.
-
    At this function's invocation, we just switched from thread
    PREV, the new thread is already running, and interrupts are
    still disabled.  This function is normally invoked by
@@ -654,6 +657,7 @@ schedule(void)
 
   ASSERT(intr_get_level() == INTR_OFF);
   ASSERT(cur->status != THREAD_RUNNING);
+  if (next == NULL) printf("THREAD NULL DUMMY\n");
   ASSERT(is_thread(next));
 
   if (cur != next)
