@@ -223,7 +223,6 @@ tid_t thread_create(const char *name, int priority,
   sema_init(&child->child_sem, 0);
   list_push_back(&thread_current()->child_list, &child->elem);
   t->been_waited_on = false;
-
   /* Add to run queue. */
   thread_unblock(t);
 
@@ -256,12 +255,15 @@ void thread_block(void)
 void thread_unblock(struct thread *t)
 {
   enum intr_level old_level;
-
+  ASSERT(t != NULL);
   ASSERT(is_thread(t));
-
   old_level = intr_disable();
   ASSERT(t->status == THREAD_BLOCKED);
+  int pre_size = list_size(&ready_list);
   list_insert_ordered(&ready_list, &t->elem, list_less_func_sort_by_priority, NULL);
+  int post_size = list_size(&ready_list);
+  printf("pre size: %d\n", pre_size);
+  printf("post size: %d\n", post_size);
   //list_push_back(&ready_list, &t->elem); //change this to a list order sort
   t->status = THREAD_READY;
   intr_set_level(old_level);
@@ -330,7 +332,9 @@ void thread_yield(void)
 
   old_level = intr_disable();
   if (cur != idle_thread)
+  {
     list_insert_ordered(&ready_list, &cur->elem, list_less_func_sort_by_priority, NULL);
+  }
     //list_push_back(&ready_list, &cur->elem); // Changes this to a list order sort
   cur->status = THREAD_READY;
   schedule();
@@ -391,7 +395,7 @@ void thread_update_donate(struct thread *thread)
   struct list_elem *list_f = list_front(&thread->lock_list);
   int max_list_prio = list_entry(list_f, struct lock, elem)->priority;
 
-  if (max_list_prio > thread->initial_priority)
+  if (max_list_prio >= thread->initial_priority)
     thread->priority = max_list_prio;
 
   intr_set_level(prev_lvl);
@@ -399,6 +403,7 @@ void thread_update_donate(struct thread *thread)
 
 bool is_highest_priority(struct thread *thread)
 {
+  ASSERT(!list_empty(&ready_list));
   struct list_elem *list_f = list_front(&ready_list);
   int max_priority = list_entry(list_f, struct thread, elem)->priority;
   return thread->priority >= max_priority;
@@ -588,6 +593,7 @@ alloc_frame(struct thread *t, size_t size)
 static struct thread *
 next_thread_to_run(void)
 {
+  printf("List size: %d\n", list_size(&ready_list));
   if (list_empty(&ready_list))
   {
     printf("LIST EMPTY\nNEXT THREAD TO RUN FAIL ln 593\n");
@@ -615,7 +621,6 @@ next_thread_to_run(void)
 void thread_schedule_tail(struct thread *prev)
 {
   struct thread *cur = running_thread();
-
   ASSERT(intr_get_level() == INTR_OFF);
 
   /* Mark us as running. */
@@ -690,5 +695,5 @@ bool list_less_func_sort_by_priority(const struct list_elem *a,
 {
   struct thread *a_prio = list_entry(a, struct thread, elem);
   struct thread *b_prio = list_entry(b, struct thread, elem);
-  return a_prio->priority >= b_prio->priority;
+  return a_prio->priority > b_prio->priority;
 }
