@@ -368,8 +368,8 @@ void thread_set_priority(int new_priority)
     struct thread *cur = thread_current();
     cur->priority = new_priority;
 
-    //thread_update_donate(thread_current());
-    //sort_ready_list();
+    thread_update_donate(thread_current());
+    sort_ready_list();
     //printf("max prior which is thread %s and I am thread %s: %d\n", max_prior->name, cur->name, max_priority);
     if (!is_highest_priority(cur))
       thread_yield();
