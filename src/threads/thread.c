@@ -79,6 +79,8 @@ static void schedule(void);
 void thread_schedule_tail(struct thread *prev);
 static tid_t allocate_tid(void);
 void thread_update_donate(struct thread *thread);
+void sort_ready_list(void);
+bool is_highest_priority(struct thread *thread);
 bool list_less_func_sort_by_priority(const struct list_elem *a,
                                      const struct list_elem *b,
                                      UNUSED void *aux);
@@ -395,7 +397,7 @@ void thread_update_donate(struct thread *thread)
   struct list_elem *list_f = list_front(&thread->lock_list);
   int max_list_prio = list_entry(list_f, struct lock, elem)->priority;
 
-  if (max_list_prio >= thread->initial_priority)
+  if (max_list_prio > thread->initial_priority)
     thread->priority = max_list_prio;
 
   intr_set_level(prev_lvl);
