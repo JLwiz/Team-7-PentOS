@@ -111,7 +111,6 @@ void thread_init(void)
 {
   ASSERT(intr_get_level() == INTR_OFF);
 
-  printf("In thread_init\n");
 
   lock_init(&tid_lock);
   list_init(&ready_list);
@@ -124,7 +123,6 @@ void thread_init(void)
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid();
 
-  printf("Returning from thread_init\n");
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
@@ -230,8 +228,10 @@ tid_t thread_create(const char *name, int priority,
   list_push_back(&thread_current()->child_list, &child->elem);
   t->been_waited_on = false;
   /* Add to run queue. */
-  thread_unblock(t);
-
+  list_insert_ordered(&ready_list, &t->elem, list_less_func_sort_by_priority, NULL);
+  thread_yield();
+  //thread_unblock(t);
+  //schedule();
   return tid;
 }
 
@@ -267,11 +267,12 @@ void thread_unblock(struct thread *t)
   ASSERT(t->status == THREAD_BLOCKED);
   int pre_size = list_size(&ready_list);
   list_insert_ordered(&ready_list, &t->elem, list_less_func_sort_by_priority, NULL);
-  int post_size = list_size(&ready_list);
-  printf("pre size: %d\n", pre_size);
-  printf("post size: %d\n", post_size);
+  //int post_size = list_size(&ready_list);
+  // printf("pre size: %d\n", pre_size);
+  // printf("post size: %d\n", post_size);
   //list_push_back(&ready_list, &t->elem); //change this to a list order sort
   t->status = THREAD_READY;
+  
   intr_set_level(old_level);
 }
 
@@ -373,11 +374,12 @@ void thread_set_priority(int new_priority)
     cur->priority = new_priority;
     struct list_elem *list_f = list_front(&ready_list);
 
-    thread_update_donate(thread_current());
-    sort_ready_list();
-
-    int max_priority = list_entry(list_f, struct thread, elem)->priority;
-    if (!(cur->priority > max_priority))
+    //thread_update_donate(thread_current());
+    //sort_ready_list();
+    struct thread* max_prior = list_entry(list_f, struct thread, elem);
+    int max_priority = max_prior->priority;
+    //printf("max prior which is thread %s and I am thread %s: %d\n", max_prior->name, cur->name, max_priority);
+    //if (cur->priority < max_priority)
       thread_yield();
 
     intr_set_level(prev_lvl);
@@ -560,7 +562,7 @@ init_thread(struct thread *t, const char *name, int priority)
   ASSERT(PRI_MIN <= priority && priority <= PRI_MAX);
   ASSERT(name != NULL);
 
-  printf("In init_thread\n");
+
   memset(t, 0, sizeof *t);
   t->status = THREAD_BLOCKED;
   strlcpy(t->name, name, sizeof t->name);
@@ -577,7 +579,6 @@ init_thread(struct thread *t, const char *name, int priority)
   old_level = intr_disable();
   list_push_back(&all_list, &t->allelem);
   intr_set_level(old_level);
-  printf("Returning from init_thread\n");
 }
 
 /* Allocates a SIZE-byte frame at the top of thread T's stack and

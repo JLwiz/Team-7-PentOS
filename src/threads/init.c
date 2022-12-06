@@ -89,9 +89,7 @@ main (void)
      then enable console locking. */
   thread_init ();
 
-  printf("Returned from thread_init() in main\n");
   console_init ();  
-  printf("Returning from console_init in main\n");
 
   /* Greet user. */
   printf ("Pintos booting with %'"PRIu32" kB RAM...\n",
