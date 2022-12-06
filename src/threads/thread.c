@@ -265,12 +265,7 @@ void thread_unblock(struct thread *t)
   ASSERT(is_thread(t));
   old_level = intr_disable();
   ASSERT(t->status == THREAD_BLOCKED);
-  int pre_size = list_size(&ready_list);
   list_insert_ordered(&ready_list, &t->elem, list_less_func_sort_by_priority, NULL);
-  //int post_size = list_size(&ready_list);
-  // printf("pre size: %d\n", pre_size);
-  // printf("post size: %d\n", post_size);
-  //list_push_back(&ready_list, &t->elem); //change this to a list order sort
   t->status = THREAD_READY;
   
   intr_set_level(old_level);
@@ -372,14 +367,11 @@ void thread_set_priority(int new_priority)
     enum intr_level prev_lvl = intr_disable();
     struct thread *cur = thread_current();
     cur->priority = new_priority;
-    struct list_elem *list_f = list_front(&ready_list);
 
     //thread_update_donate(thread_current());
     //sort_ready_list();
-    struct thread* max_prior = list_entry(list_f, struct thread, elem);
-    int max_priority = max_prior->priority;
     //printf("max prior which is thread %s and I am thread %s: %d\n", max_prior->name, cur->name, max_priority);
-    //if (cur->priority < max_priority)
+    if (!is_highest_priority(cur))
       thread_yield();
 
     intr_set_level(prev_lvl);
