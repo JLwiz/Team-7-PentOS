@@ -403,7 +403,7 @@ void thread_update_donate(struct thread *thread)
 
 bool is_highest_priority(struct thread *thread)
 {
-  ASSERT(!list_empty(&ready_list));
+  if (list_empty(&ready_list)) return true;
   struct list_elem *list_f = list_front(&ready_list);
   int max_priority = list_entry(list_f, struct thread, elem)->priority;
   return thread->priority >= max_priority;
