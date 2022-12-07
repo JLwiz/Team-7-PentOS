@@ -362,52 +362,53 @@ void thread_foreach(thread_action_func *func, void *aux)
 /* Sets the current thread's priority to NEW_PRIORITY. */
 void thread_set_priority(int new_priority)
 {
-  if (new_priority >= PRI_MIN && new_priority <= PRI_MAX)
-  {
-    enum intr_level prev_lvl = intr_disable();
-    struct thread *cur = thread_current();
-    cur->priority = new_priority;
+  struct thread *current = thread_current();
 
-    thread_update_donate(thread_current());
-    sort_ready_list();
-    //printf("max prior which is thread %s and I am thread %s: %d\n", max_prior->name, cur->name, max_priority);
-    if (!is_highest_priority(cur))
+  if (list_empty(&current->lock_list) || new_priority > current->priority) {
+    current->priority = new_priority;
+    current->initial_priority = new_priority;
+  }
+  else {
+    current->initial_priority = new_priority;
+  }
+    
+  if (!list_empty(&ready_list)){
+    struct thread *temp = list_entry(list_front(&ready_list), struct thread, elem);
+    if (temp->priority > current->priority)
       thread_yield();
-
-    intr_set_level(prev_lvl);
   }
 }
 
 
-void sort_ready_list()
-{
-  list_sort(&ready_list, list_less_func_sort_by_priority, NULL);
-}
+// void sort_ready_list()
+// {
+//   list_sort(&ready_list, list_less_func_sort_by_priority, NULL);
+// }
 
 
-void thread_update_donate(struct thread *thread)
-{
-  if (list_empty(&thread->lock_list))
-    return;
+// void thread_update_donate(struct thread *thread)
+// {
+//   if (list_empty(&thread->lock_list))
+//     return;
 
-  enum intr_level prev_lvl = intr_disable();
+//   enum intr_level prev_lvl = intr_disable();
 
-  struct list_elem *list_f = list_front(&thread->lock_list);
-  int max_list_prio = list_entry(list_f, struct lock, elem)->priority;
+//   struct list_elem *list_f = list_front(&thread->lock_list);
+//   int max_list_prio = list_entry(list_f, struct lock, elem)->priority;
 
-  if (max_list_prio > thread->initial_priority)
-    thread->priority = max_list_prio;
+//   if (max_list_prio > thread->initial_priority)
+//     thread->priority = max_list_prio;
 
-  intr_set_level(prev_lvl);
-}
+//   intr_set_level(prev_lvl);
+// }
 
-bool is_highest_priority(struct thread *thread)
-{
-  ASSERT(!list_empty(&ready_list));
-  struct list_elem *list_f = list_front(&ready_list);
-  int max_priority = list_entry(list_f, struct thread, elem)->priority;
-  return thread->priority >= max_priority;
-}
+// bool is_highest_priority(struct thread *thread)
+// {
+//   ASSERT(!list_empty(&ready_list));
+//   struct list_elem *list_f = list_front(&ready_list);
+//   int max_priority = list_entry(list_f, struct thread, elem)->priority;
+//   return thread->priority >= max_priority;
+// }
 
 
 /* Returns the current thread's DONATED priority. */

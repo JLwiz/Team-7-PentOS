@@ -195,49 +195,29 @@ lock_init (struct lock *lock)
 void
 lock_acquire (struct lock *lock)
 {
-  // ASSERT (lock != NULL);
-  // ASSERT (!intr_context ());
-  // ASSERT (!lock_held_by_current_thread (lock));
-
-
-  // bool success = lock_try_acquire(lock);
-  // if (success) 
-  // {
-  //   sema_down (&lock->semaphore);
-  //   lock->holder = thread_current ();
-  //   list_push_back(&thread_current()->lock_list, &lock->elem);
-  // } 
-  // else 
-  // {
-  //   //Donation
-  //   int counter = 0;
-  //   struct thread* lock_holder = lock->holder;
-  //   struct lock *cur_lock = lock;
-  //   if (lock_holder != NULL)
-  //   {
-  //     lock->holder->priority = thread_current()->priority + counter;
-  //     struct thread* recipient = lock_holder->prio_recipient;
-  //     while (recipient != NULL) 
-  //     {
-  //       counter++;
-  //       recipient->priority = thread_current()->priority + counter;
-  //       recipient = recipient->prio_recipient;
-  //       //add to the recipient
-  //       //get next reciepent
-        
-  //     }
-  //     sort_ready_list();
-  //   }
-  //   sema_down(&lock->semaphore);
-  //   list_push_back(&thread_current()->lock_list, &lock->elem);
-  //   lock->holder = thread_current();
-  //   lock->priority = thread_current()->priority;
-  //   thread_yield();
-  // }
   ASSERT (lock != NULL);
   ASSERT (!intr_context ());
   ASSERT (!lock_held_by_current_thread (lock));
 
+  struct thread *current = thread_current ();
+  enum intr_level prev_lvl = intr_disable ();
+
+    if (lock->holder) {
+      current->lock_by = lock;
+      list_push_back (&lock->holder->lock_list, &current->lock_elem);
+      struct thread *temp = current;
+      struct thread *lock_holder = temp->lock_by->holder;
+      while (temp->lock_by){
+        if (temp->priority > lock_holder->priority){
+          lock_holder->priority = temp->priority;
+          temp = lock_holder;
+        } else {
+          break;
+        }
+      }
+    }
+
+  intr_set_level (prev_lvl);
   sema_down (&lock->semaphore);
   lock->holder = thread_current ();
   
@@ -276,27 +256,47 @@ lock_try_acquire (struct lock *lock)
 void
 lock_release (struct lock *lock) 
 {
-  // ASSERT (lock != NULL);
-  // ASSERT (lock_held_by_current_thread (lock));
-  // struct thread* cur = thread_current();
-  // struct list_elem *e;
-  // lock->holder = NULL;
-  // //Releasing the lock with donation priority
-  // intr_disable();
-
-  // cur->priority = cur->initial_priority;
-  // //Ensure list is ordered by priority
-  // struct thread* next_to_run = list_entry(list_pop_front(&lock->waiters), struct thread, elem);
   ASSERT (lock != NULL);
   ASSERT (lock_held_by_current_thread (lock));
 
   lock->holder = NULL;
-
-
-
-
-
   sema_up (&lock->semaphore);
+  enum intr_level prev_lvl = intr_disable ();
+  struct thread *current = thread_current ();
+
+  if(!list_empty (&current->lock_list)) {
+    struct thread *temp;
+    int temp_prio = -1;
+
+    struct list_elem *e = list_begin(&current->lock_list);
+    while (e != list_end (&current->lock_list)) {
+      temp = list_entry (e, struct thread, lock_elem);
+      if (temp->lock_by == lock) {
+        temp->lock_by = NULL;
+        e = list_remove (e);
+      }
+      else {
+        if (temp->priority > temp_prio)
+          temp_prio = temp->priority;
+        e = list_next (e);
+      }
+    }
+
+    if (temp_prio > -1){
+      if (current->initial_priority > temp_prio)
+        thread_set_priority (current->initial_priority);
+      else {
+        current->priority = temp_prio;
+        thread_yield ();
+      }
+    }
+    else
+      thread_set_priority (current->initial_priority);
+  }
+  else
+    thread_set_priority (current->initial_priority);
+
+  intr_set_level (prev_lvl);
 }
 
 /* Returns true if the current thread holds LOCK, false
