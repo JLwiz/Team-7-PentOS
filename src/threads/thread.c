@@ -373,15 +373,8 @@ void thread_set_priority(int new_priority)
 
     thread_update_donate(thread_current());
     sort_ready_list();
-<<<<<<< HEAD
-    struct thread* max_prior = list_entry(list_f, struct thread, elem);
-    int max_priority = max_prior->priority;
-    //printf("max prior which is thread %s and I am thread %s: %d\n", max_prior->name, cur->name, max_priority);
-    if (cur->priority < max_priority)
-=======
     //printf("max prior which is thread %s and I am thread %s: %d\n", max_prior->name, cur->name, max_priority);
     if (!is_highest_priority(cur))
->>>>>>> b7afc12863e08191fe1720bc2ff017d6cf0a23a5
       thread_yield();
 
     intr_set_level(prev_lvl);
