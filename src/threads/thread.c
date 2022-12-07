@@ -377,7 +377,7 @@ void thread_set_priority(int new_priority)
     
   if (!list_empty(&ready_list)){
     struct thread *temp = list_entry(list_front(&ready_list), struct thread, elem);
-    if (temp->priority > current->priority)
+    if (temp->priority >= current->priority)
       thread_yield();
   }
 }
@@ -575,6 +575,7 @@ init_thread(struct thread *t, const char *name, int priority)
   t->stack = (uint8_t *)t + PGSIZE;
   t->priority = priority;
   t->initial_priority = priority;
+  t->highest_waiting_prio = 0;
   t->magic = THREAD_MAGIC;
   t->parent = running_thread();
   t->next_fd = 2;

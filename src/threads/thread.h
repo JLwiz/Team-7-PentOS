@@ -102,6 +102,9 @@ struct thread
    //  struct hash fd_hash;
 // <<<<<<< HEAD
     struct list_elem lock_elem;
+
+    struct list_elem waiter_elem;
+    int highest_waiting_prio;
     struct list lock_list;
     struct lock* lock_by;
 // =======
@@ -137,7 +140,7 @@ struct thread
     int64_t ticks_left;
     
 
-    struct thread* prio_recipient ;
+    struct thread* given_by ;
     
 #ifdef USERPROG
     /* Owned by userprog/process.c. */

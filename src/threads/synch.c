@@ -215,17 +215,24 @@ lock_acquire (struct lock *lock)
 
     if (lock->holder) {
       current->lock_by = lock;
-      list_push_back (&lock->holder->lock_list, &current->lock_elem);
+      list_insert_ordered(&lock->holder->lock_list, &current->lock_elem, list_less_func_sort_by_priority_synch, NULL);
+      if (current->priority > lock->holder->highest_waiting_prio)
+        lock->holder->highest_waiting_prio = current->priority;
+      list_push_back (&lock->waiters, &current->waiter_elem);
       struct thread *temp = current;
       struct thread *lock_holder = temp->lock_by->holder;
-      while (temp->lock_by){
-        if (temp->priority > lock_holder->priority) {
-          lock_holder->priority = temp->priority;
-          temp = lock_holder;
-        } else {
-          break;
-        }
-      }
+      lock_holder->priority = temp->priority;
+      lock_holder->prio_recipient = temp;
+      thread_block();
+      // // while (temp->lock_by != NULL){
+      // //   printf("I am thread: %s, waiting for lock_holder:%s\n", temp->name, lock_holder->name);
+      // //   if (temp->priority > lock_holder->priority) {
+      // //     lock_holder->priority = temp->priority;
+      // //     temp = lock_holder;
+      // //   } else {
+      // //     break;
+      // //   }
+      // }
     }
 
   intr_set_level (prev_lvl);
@@ -336,38 +343,110 @@ lock_release (struct lock *lock)
   enum intr_level prev_lvl = intr_disable ();
   struct thread *current = thread_current ();
 
-  if(!list_empty (&current->lock_list)) {
+  if(!list_empty (&lock->waiters)) {
     struct thread *temp;
+    struct thread *next_thread;
     int temp_prio = -1;
-
-    struct list_elem *e = list_begin(&current->lock_list);
-    while (e != list_end (&current->lock_list)) {
-      temp = list_entry (e, struct thread, lock_elem);
-      if (temp->lock_by == lock) {
-        temp->lock_by = NULL;
-        e = list_remove (e);
+    struct list_elem* removing_e; 
+    struct list_elem *e = list_begin(&lock->waiters);
+    while (e != list_end (&lock->waiters)) 
+    {
+      //printf("Entered into this loop...in thread: %s\n", current->name);
+      temp = list_entry (e, struct thread, waiter_elem);
+      //if (temp->lock_by == lock) {
+      temp->lock_by = NULL;
+      if (temp->priority > temp_prio) 
+      {
+        temp_prio = temp->priority;
+        next_thread = temp;
+        removing_e = e;
       }
-      else {
-        if (temp->priority > temp_prio)
-          temp_prio = temp->priority;
-        e = list_next (e);
+      e = list_next (e);
+      //}
+      //else {
+        // if (temp->priority > temp_prio)
+        //   temp_prio = temp->priority;
+        //e = list_next (e);
       }
-    }
 
 // <<<<<<< HEAD
-    if (temp_prio > -1){
-      if (current->initial_priority > temp_prio)
-        thread_set_priority (current->initial_priority);
-      else {
-        current->priority = temp_prio;
-        thread_yield ();
-      }
+    if (temp_prio > -1)
+    {
+      // if (!list_empty(&current->lock_list)) 
+      // {
+      //   temp_prio = 0;
+      //   while (e != list_end (&current->lock_list)) 
+      //   {
+      //     printf("Entered into this loop...in thread: %s\n", current->name);
+      //     temp = list_entry (e, struct thread, lock_elem);
+      //     if (temp->priority > temp_prio) 
+      //     {
+      //       temp_prio = temp->priority;
+      //       break;
+      //     }
+      //     e = list_next (e);
+      //   }
+      // current->priority = temp_prio;
+      // } else 
+      // {
+      //   current->priority = current->initial_priority;
+      // }
+      //printf("Thread %s is about to wake up thread %s\n", current->name, next_thread->name);
+      
+      if (!list_empty(&current->lock_list)) 
+      {
+        struct thread* next_thread_lock = list_pop_front(&current->lock_list);
+        current->priority = next_thread_lock->priority;
+      } else {
+      thread_set_priority(current->initial_priority);
+      } //wrong, its eprior needs to be the next highest
+      list_remove(removing_e);
+      list_remove(&next_thread->lock_elem);
+      thread_unblock(next_thread);
+      thread_yield ();
+
+      // if (current->initial_priority > temp_prio)
+      //   // thread_set_priority (current->priority);
+      //   current->priority = current->initial_priority;
+      // else {
+      //   current->priority = current->initial_priority;
+      //   thread_unblock(next_thread);
+      //   thread_yield ();
+      //   //thread_set_priority(temp_prio);
+      // }
     }
-    else
-      thread_set_priority (current->initial_priority);
+    else 
+    {
+      //BAD BAD NO GOOD FIX
+      // if (!list_empty(&current->lock_list)) 
+      // {
+      //   temp_prio = 0;
+      //   while (e != list_end (&current->lock_list)) 
+      //   {
+      //     printf("Entered into this loop...in thread: %s\n", current->name);
+      //     temp = list_entry (e, struct thread, lock_elem);
+      //     if (temp->priority > temp_prio) 
+      //     {
+      //       temp_prio = temp->priority;
+      //     }
+      //     e = list_next (e);
+      //   }
+
+
+
+
+        
+      // }
+      //thread_set_priority (current->initial_priority);
+      thread_set_priority(current->initial_priority);
+      //thread_yield();
+
+    }
   }
-  else
-    thread_set_priority (current->initial_priority);
+  else {
+    //thread_set_priority (current->initial_priority);
+    current->priority = current->initial_priority;
+  }
 
   intr_set_level (prev_lvl);
 // =======
