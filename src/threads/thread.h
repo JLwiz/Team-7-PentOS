@@ -100,9 +100,19 @@ struct thread
     struct thread *parent;
    //  struct hash_elem file_descriptors;  /* List element for filedescriptor list*/
    //  struct hash fd_hash;
+// <<<<<<< HEAD
     struct list_elem lock_elem;
     struct list lock_list;
     struct lock* lock_by;
+// =======
+
+   //  struct list_elem lock_elem;
+    
+   //  struct list lock_list;
+
+    struct semaphore lock_waiting_sema;
+
+// >>>>>>> ca7fc427881503979ec073983191e0e2bcf3addd
 
     struct list file_list; /* List of all opened files*/
 
