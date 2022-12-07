@@ -34,6 +34,16 @@
 #include "threads/thread.h"
 #include <stdlib.h>
 
+
+bool list_less_func_sort_by_priority_synch(const struct list_elem *a,
+                                     const struct list_elem *b,
+                                     UNUSED void *aux)
+{
+  struct thread *a_prio = list_entry(a, struct thread, elem);
+  struct thread *b_prio = list_entry(b, struct thread, elem);
+  return a_prio->priority > b_prio->priority;
+}
+
 /* Initializes semaphore SEMA to VALUE.  A semaphore is a
    nonnegative integer along with two atomic operators for
    manipulating it:
@@ -70,7 +80,8 @@ sema_down (struct semaphore *sema)
   old_level = intr_disable ();
   while (sema->value == 0) 
     {
-      list_push_back (&sema->waiters, &thread_current ()->elem);
+      list_insert_ordered(&sema->waiters, &thread_current()->elem, list_less_func_sort_by_priority_synch, NULL);
+      //list_push_back (&sema->waiters, &thread_current ()->elem);
       thread_block ();
     }
   sema->value--;
@@ -123,14 +134,6 @@ sema_up (struct semaphore *sema)
 }
 
 
-bool list_less_func_sort_by_priority_synch(const struct list_elem *a,
-                                     const struct list_elem *b,
-                                     UNUSED void *aux)
-{
-  struct thread *a_prio = list_entry(a, struct thread, elem);
-  struct thread *b_prio = list_entry(b, struct thread, elem);
-  return a_prio->priority > b_prio->priority;
-}
 
 static void sema_test_helper (void *sema_);
 
@@ -215,7 +218,8 @@ lock_acquire (struct lock *lock)
 
     if (lock->holder) {
       current->lock_by = lock;
-      list_push_back (&lock->holder->lock_list, &current->lock_elem);
+      list_insert_ordered(&lock->holder->lock_list, &current->lock_elem, list_less_func_sort_by_priority_synch, NULL);
+      //list_push_back (&lock->holder->lock_list, &current->lock_elem);
       struct thread *temp = current;
       struct thread *lock_holder = temp->lock_by->holder;
       while (temp->lock_by){
@@ -227,7 +231,6 @@ lock_acquire (struct lock *lock)
         }
       }
     }
-
   intr_set_level (prev_lvl);
   sema_down (&lock->semaphore);
   lock->holder = thread_current ();
