@@ -220,29 +220,23 @@ lock_acquire (struct lock *lock)
 
   struct thread *current = thread_current ();
   enum intr_level prev_lvl = intr_disable ();
-  struct lock *cur_lock = lock;
-  struct thread *lock_holder = lock->holder;
-    if (lock->holder) {
-      current->lock_by = lock;
-      list_insert_ordered(&lock->holder->lock_list, &current->lock_elem, list_less_func_sort_by_priority_synch, NULL);
-      //list_push_back (&lock->holder->lock_list, &current->lock_elem);
-      struct thread *temp = current;
-      // struct thread *lock_holder = temp->lock_by->holder;
-      while (lock_holder != NULL){
-        if (temp->priority > lock_holder->priority) {
-          lock_holder->priority = temp->priority;
-          cur_lock = lock_holder->lock_by;
-          if (cur_lock == NULL) break;
-          lock_holder = cur_lock->holder;
-        } else {
-          break;
-        }
+  if (lock->holder) {
+    current->lock_by = lock;
+    list_insert_ordered(&lock->holder->lock_list, &current->lock_elem, list_less_func_sort_by_priority_synch, NULL);
+    struct thread *temp = current;
+    struct lock *cur_lock = lock;
+    struct thread *lock_holder = lock->holder;
+    while (lock_holder != NULL){
+      if (temp->priority > lock_holder->priority) {
+        lock_holder->priority = temp->priority;
+        cur_lock = lock_holder->lock_by;
+        if (cur_lock == NULL) break;
+        lock_holder = cur_lock->holder;
+      } else {
+        break;
       }
     }
-    else
-    {
-
-    }
+  }
   intr_set_level (prev_lvl);
   sema_down (&lock->semaphore);
   lock->holder = thread_current ();
