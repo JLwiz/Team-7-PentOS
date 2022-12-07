@@ -129,7 +129,7 @@ bool list_less_func_sort_by_priority_synch(const struct list_elem *a,
 {
   struct thread *a_prio = list_entry(a, struct thread, elem);
   struct thread *b_prio = list_entry(b, struct thread, elem);
-  return a_prio->priority >= b_prio->priority;
+  return a_prio->priority > b_prio->priority;
 }
 
 static void sema_test_helper (void *sema_);
@@ -222,7 +222,7 @@ lock_acquire (struct lock *lock)
       struct thread *temp = current;
       struct thread *lock_holder = temp->lock_by->holder;
       lock_holder->priority = temp->priority;
-      lock_holder->prio_recipient = temp;
+      //lock_holder->prio_recipient = temp;
       thread_block();
       // // while (temp->lock_by != NULL){
       // //   printf("I am thread: %s, waiting for lock_holder:%s\n", temp->name, lock_holder->name);
@@ -238,7 +238,7 @@ lock_acquire (struct lock *lock)
   intr_set_level (prev_lvl);
   sema_down (&lock->semaphore);
   lock->holder = thread_current ();
-
+  //printf("I got the lock: %s\n", lock->holder->name);
   
   // if (lock->holder == NULL) 
   // {
@@ -329,7 +329,8 @@ lock_release (struct lock *lock)
   // intr_disable();
 
   // cur->priority = cur->initial_priority;
-  // //Ensure list is ordered by priority
+  // //Ensure list is ordered by
+   //priority
   // struct thread* next_to_run = list_entry(list_pop_front(&lock->waiters), struct thread, elem);
   //printf("I am thread :%s, and this lock's current holder is :%s\n", thread_current()->name, lock->holder->name);
 // >>>>>>> ca7fc427881503979ec073983191e0e2bcf3addd
@@ -343,7 +344,9 @@ lock_release (struct lock *lock)
   enum intr_level prev_lvl = intr_disable ();
   struct thread *current = thread_current ();
 
-  if(!list_empty (&lock->waiters)) {
+  if(!list_empty (&lock->waiters)) 
+  {
+    
     struct thread *temp;
     struct thread *next_thread;
     int temp_prio = -1;
@@ -368,84 +371,41 @@ lock_release (struct lock *lock)
         //   temp_prio = temp->priority;
         //e = list_next (e);
       }
-
-// <<<<<<< HEAD
     if (temp_prio > -1)
     {
-      // if (!list_empty(&current->lock_list)) 
-      // {
-      //   temp_prio = 0;
-      //   while (e != list_end (&current->lock_list)) 
-      //   {
-      //     printf("Entered into this loop...in thread: %s\n", current->name);
-      //     temp = list_entry (e, struct thread, lock_elem);
-      //     if (temp->priority > temp_prio) 
-      //     {
-      //       temp_prio = temp->priority;
-      //       break;
-      //     }
-      //     e = list_next (e);
-      //   }
-      // current->priority = temp_prio;
-      // } else 
-      // {
-      //   current->priority = current->initial_priority;
-      // }
-      //printf("Thread %s is about to wake up thread %s\n", current->name, next_thread->name);
       
+      list_remove(removing_e);
+      list_remove(&next_thread->lock_elem);
+
       if (!list_empty(&current->lock_list)) 
       {
-        struct thread* next_thread_lock = list_pop_front(&current->lock_list);
-        current->priority = next_thread_lock->priority;
+        
+        struct thread* next_thread_lock = list_entry(list_pop_front(&current->lock_list), struct thread, lock_elem);
+
+        printf("here in thread %s:  looking at thread %s going to unblock thread %s\n", current->name, next_thread_lock->name, next_thread->name);
+
+        //current->priority = next_thread_lock->priority;
+
+        thread_set_priority(next_thread_lock->priority);
       } else {
       thread_set_priority(current->initial_priority);
       } //wrong, its eprior needs to be the next highest
-      list_remove(removing_e);
-      list_remove(&next_thread->lock_elem);
+
+      printf("next thread: %s\n", next_thread->name);
       thread_unblock(next_thread);
       thread_yield ();
-
-      // if (current->initial_priority > temp_prio)
-      //   // thread_set_priority (current->priority);
-      //   current->priority = current->initial_priority;
-      // else {
-      //   current->priority = current->initial_priority;
-      //   thread_unblock(next_thread);
-      //   thread_yield ();
-      //   //thread_set_priority(temp_prio);
-      // }
     }
     else 
     {
-      //BAD BAD NO GOOD FIX
-      // if (!list_empty(&current->lock_list)) 
-      // {
-      //   temp_prio = 0;
-      //   while (e != list_end (&current->lock_list)) 
-      //   {
-      //     printf("Entered into this loop...in thread: %s\n", current->name);
-      //     temp = list_entry (e, struct thread, lock_elem);
-      //     if (temp->priority > temp_prio) 
-      //     {
-      //       temp_prio = temp->priority;
-      //     }
-      //     e = list_next (e);
-      //   }
-
-
-
-
-        
-      // }
-      //thread_set_priority (current->initial_priority);
+      
       thread_set_priority(current->initial_priority);
-      //thread_yield();
+
 
     }
   }
   else {
-    //thread_set_priority (current->initial_priority);
-    current->priority = current->initial_priority;
+    thread_set_priority (current->initial_priority);
+    //current->priority = current->initial_priority;
   }
 
   intr_set_level (prev_lvl);
