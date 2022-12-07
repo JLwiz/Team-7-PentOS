@@ -134,13 +134,13 @@ struct thread
 
     int next_fd;
     /* Shared sleeper list */
-    struct list_elem sleeper_elem; /* Sleeping threads list */
+    struct liSst_elem sleeper_elem; /* Sleeping threads list */
     
     /* amount of ticks till woken */
     int64_t ticks_left;
     
 
-    struct thread* given_by ;
+    struct thread* prio_recipient ;
     
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
