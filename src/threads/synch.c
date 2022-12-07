@@ -226,15 +226,15 @@ lock_acquire (struct lock *lock)
     struct thread *temp = current;
     struct lock *cur_lock = lock;
     struct thread *lock_holder = lock->holder;
-    while (lock_holder != NULL){
+    while (lock_holder != NULL && cur_lock != NULL){
       if (temp->priority > lock_holder->priority) {
         lock_holder->priority = temp->priority;
-        cur_lock = lock_holder->lock_by;
-        if (cur_lock == NULL) break;
+        if ((cur_lock = lock_holder->lock_by) == NULL)
+        { 
+          break;
+        }
         lock_holder = cur_lock->holder;
-      } else {
-        break;
-      }
+      } 
     }
   }
   intr_set_level (prev_lvl);
