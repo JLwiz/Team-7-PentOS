@@ -575,7 +575,7 @@ init_thread(struct thread *t, const char *name, int priority)
   t->stack = (uint8_t *)t + PGSIZE;
   t->priority = priority;
   t->initial_priority = priority;
-  t->highest_waiting_prio = 0;
+  t->starting_prio = priority;
   t->magic = THREAD_MAGIC;
   t->parent = running_thread();
   t->next_fd = 2;

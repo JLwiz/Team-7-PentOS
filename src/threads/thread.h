@@ -132,9 +132,11 @@ struct thread
 
     struct file* file;
 
+    int starting_prio;
+
     int next_fd;
     /* Shared sleeper list */
-    struct liSst_elem sleeper_elem; /* Sleeping threads list */
+    struct list_elem sleeper_elem; /* Sleeping threads list */
     
     /* amount of ticks till woken */
     int64_t ticks_left;

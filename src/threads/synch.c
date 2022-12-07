@@ -382,16 +382,16 @@ lock_release (struct lock *lock)
         
         struct thread* next_thread_lock = list_entry(list_pop_front(&current->lock_list), struct thread, lock_elem);
 
-        printf("here in thread %s:  looking at thread %s going to unblock thread %s\n", current->name, next_thread_lock->name, next_thread->name);
+        //printf("here in thread %s:  looking at thread %s going to unblock thread %s\n", current->name, next_thread_lock->name, next_thread->name);
 
         //current->priority = next_thread_lock->priority;
 
         thread_set_priority(next_thread_lock->priority);
       } else {
-      thread_set_priority(current->initial_priority);
+      thread_set_priority(current->starting_prio);
       } //wrong, its eprior needs to be the next highest
 
-      printf("next thread: %s\n", next_thread->name);
+      //printf("next thread: %s getting woken up by thread %s with prio %d\n", next_thread->name, current->name, current->priority);
       thread_unblock(next_thread);
       thread_yield ();
     }
