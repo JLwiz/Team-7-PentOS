@@ -221,7 +221,7 @@ lock_acquire (struct lock *lock)
   ASSERT (!lock_held_by_current_thread (lock));
 
   struct thread *current = thread_current ();
-  // enum intr_level prev_lvl = intr_disable ();
+  enum intr_level prev_lvl = intr_disable ();
   if (lock->holder) 
   {
     current->waiting_on = lock;
@@ -241,7 +241,7 @@ lock_acquire (struct lock *lock)
       } 
     }
   }
-  // intr_set_level (prev_lvl);
+  intr_set_level (prev_lvl);
   sema_down (&lock->semaphore);
   lock->holder = thread_current ();
 }
