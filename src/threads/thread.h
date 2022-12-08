@@ -98,32 +98,15 @@ struct thread
     struct list_elem allelem;           /* List element for all threads list. */
     bool been_waited_on;
     struct thread *parent;
-   //  struct hash_elem file_descriptors;  /* List element for filedescriptor list*/
-   //  struct hash fd_hash;
-// <<<<<<< HEAD
+
     struct list_elem lock_elem;
 
-    struct list_elem waiter_elem;
-    int highest_waiting_prio;
     struct list lock_list;
-    struct lock* lock_by;
-// =======
-
-   //  struct list_elem lock_elem;
-    
-   //  struct list lock_list;
-
-    struct semaphore lock_waiting_sema;
-
-// >>>>>>> ca7fc427881503979ec073983191e0e2bcf3addd
+    struct lock* waiting_on;
 
     struct list file_list; /* List of all opened files*/
 
-
     struct list child_list; /* List of all opened files*/
-
-    //struct lock file_lock; /*lock used for syscalls*/
-    
 
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
@@ -132,17 +115,12 @@ struct thread
 
     struct file* file;
 
-    int starting_prio;
-
     int next_fd;
     /* Shared sleeper list */
     struct list_elem sleeper_elem; /* Sleeping threads list */
     
     /* amount of ticks till woken */
     int64_t ticks_left;
-    
-
-    struct thread* prio_recipient ;
     
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
@@ -193,8 +171,7 @@ void thread_set_nice (int);
 int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
 struct thread* get_thread(tid_t);
-// unsigned thread_hash (const struct hash_elem*, void*);
-// bool thread_less (const struct hash_elem* , const struct hash_elem*,void* );
+
 struct file_entry 
 {
     int fd;

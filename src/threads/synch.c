@@ -38,6 +38,10 @@ bool list_less_func_sort_by_priority_synch(const struct list_elem *a,
                                      const struct list_elem *b,
                                      UNUSED void *aux);
 
+bool list_less_func_sort_by_priority_sema(const struct list_elem *a,
+                                     const struct list_elem *b,
+                                     UNUSED void *aux);
+
 bool list_less_func_sort_by_priority_synch(const struct list_elem *a,
                                      const struct list_elem *b,
                                      UNUSED void *aux)
@@ -220,18 +224,20 @@ lock_acquire (struct lock *lock)
 
   struct thread *current = thread_current ();
   enum intr_level prev_lvl = intr_disable ();
-  if (lock->holder) {
-    current->lock_by = lock;
-    list_insert_ordered(&lock->holder->lock_list, &current->lock_elem, list_less_func_sort_by_priority_synch, NULL);
-    struct thread *temp = current;
+  if (lock->holder) 
+  {
+    current->waiting_on = lock;
     struct lock *cur_lock = lock;
     struct thread *lock_holder = lock->holder;
-    while (lock_holder != NULL && cur_lock != NULL){
-      if (temp->priority > lock_holder->priority) {
-        lock_holder->priority = temp->priority;
-        if ((cur_lock = lock_holder->lock_by) == NULL)
+    // Donator lock_list add donee
+    list_insert_ordered(&lock->holder->lock_list, &current->lock_elem, list_less_func_sort_by_priority_synch, NULL);
+    while (lock_holder && cur_lock) /* update thread's donators */
+    {
+      if (current->priority > lock_holder->priority) {
+        lock_holder->priority = current->priority;
+        if ((cur_lock = lock_holder->waiting_on) == NULL)
         { 
-          break;
+          continue;
         }
         lock_holder = cur_lock->holder;
       } 
@@ -281,37 +287,39 @@ lock_release (struct lock *lock)
   sema_up (&lock->semaphore);
   enum intr_level prev_lvl = intr_disable ();
   struct thread *current = thread_current ();
+  int next_prio = -1;
+  struct thread *next;
 
   if(!list_empty (&current->lock_list)) {
-    struct thread *temp;
-    int temp_prio = -1;
-
     struct list_elem *e = list_begin(&current->lock_list);
     while (e != list_end (&current->lock_list)) {
-      temp = list_entry (e, struct thread, lock_elem);
-      if (temp->lock_by == lock) {
-        temp->lock_by = NULL;
+      next = list_entry (e, struct thread, lock_elem);
+      if (next->waiting_on == lock) 
+      {
+        next->waiting_on = NULL;
         e = list_remove (e);
       }
-      else {
-        if (temp->priority > temp_prio)
-          temp_prio = temp->priority;
+      else 
+      {
+        if (next->priority > next_prio)
+        {
+          next_prio = next->priority;
+        }
         e = list_next (e);
       }
     }
-    if (temp_prio > -1){
-      if (current->initial_priority > temp_prio)
-        thread_set_priority (current->initial_priority);
-      else {
-        current->priority = temp_prio;
-        thread_yield ();
-      }
-    }
-    else
-      thread_set_priority (current->initial_priority);
   }
-  else
+
+  if (next_prio > -1){
+    if (current->initial_priority > next_prio)
+      thread_set_priority (current->initial_priority);
+    else {
+      current->priority = next_prio;
+      thread_yield ();
+    }
+  } else{
     thread_set_priority (current->initial_priority);
+  }
 
   intr_set_level (prev_lvl);
 }

@@ -111,11 +111,10 @@ void thread_init(void)
 {
   ASSERT(intr_get_level() == INTR_OFF);
 
-
   lock_init(&tid_lock);
   list_init(&ready_list);
   list_init(&all_list);
-  
+
   list_init(&sleeper_list);
   lock_init(&file_lock);
   /* Set up a thread structure for the running thread. */
@@ -123,7 +122,6 @@ void thread_init(void)
   init_thread(initial_thread, "main", PRI_DEFAULT);
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid();
-
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
@@ -159,7 +157,8 @@ void thread_tick(void)
     kernel_ticks++;
 
   /* Enforce preemption. */
-  if (++thread_ticks >= TIME_SLICE) {
+  if (++thread_ticks >= TIME_SLICE)
+  {
     intr_yield_on_return();
   }
 }
@@ -233,8 +232,8 @@ tid_t thread_create(const char *name, int priority,
   /* Add to run queue. */
   list_insert_ordered(&ready_list, &t->elem, list_less_func_sort_by_priority, NULL);
   thread_yield();
-  //thread_unblock(t);
-  //schedule();
+  // thread_unblock(t);
+  // schedule();
   return tid;
 }
 
@@ -270,7 +269,7 @@ void thread_unblock(struct thread *t)
   ASSERT(t->status == THREAD_BLOCKED);
   list_insert_ordered(&ready_list, &t->elem, list_less_func_sort_by_priority, NULL);
   t->status = THREAD_READY;
-  
+
   intr_set_level(old_level);
 }
 
@@ -340,7 +339,6 @@ void thread_yield(void)
   {
     list_insert_ordered(&ready_list, &cur->elem, list_less_func_sort_by_priority, NULL);
   }
-    //list_push_back(&ready_list, &cur->elem); // Changes this to a list order sort
   cur->status = THREAD_READY;
   schedule();
   intr_set_level(old_level);
@@ -367,62 +365,23 @@ void thread_set_priority(int new_priority)
 {
   struct thread *current = thread_current();
 
-  if (list_empty(&current->lock_list) || new_priority > current->priority) {
+  if (list_empty(&current->lock_list) || new_priority > current->priority)
+  {
     current->priority = new_priority;
     current->initial_priority = new_priority;
   }
-  else {
+  else
+  {
     current->initial_priority = new_priority;
   }
-    
-  if (!list_empty(&ready_list)){
+
+  if (!list_empty(&ready_list))
+  {
     struct thread *temp = list_entry(list_front(&ready_list), struct thread, elem);
     if (temp->priority >= current->priority)
       thread_yield();
   }
 }
-
-
-// void sort_ready_list()
-// {
-//   list_sort(&ready_list, list_less_func_sort_by_priority, NULL);
-// }
-
-
-// void thread_update_donate(struct thread *thread)
-// {
-//   if (list_empty(&thread->lock_list))
-//     return;
-
-//   enum intr_level prev_lvl = intr_disable();
-
-//   struct list_elem *list_f = list_front(&thread->lock_list);
-//   int max_list_prio = list_entry(list_f, struct lock, elem)->priority;
-
-//   if (max_list_prio > thread->initial_priority)
-//     thread->priority = max_list_prio;
-
-//   intr_set_level(prev_lvl);
-// }
-
-// <<<<<<< HEAD
-// bool is_highest_priority(struct thread *thread)
-// {
-//   ASSERT(!list_empty(&ready_list));
-//   struct list_elem *list_f = list_front(&ready_list);
-//   int max_priority = list_entry(list_f, struct thread, elem)->priority;
-//   return thread->priority >= max_priority;
-// }
-// =======
-// bool is_highest_priority(struct thread *thread)
-// {
-//   if (list_empty(&ready_list)) return true;
-//   struct list_elem *list_f = list_front(&ready_list);
-//   int max_priority = list_entry(list_f, struct thread, elem)->priority;
-//   return thread->priority >= max_priority;
-// }
-// >>>>>>> ca7fc427881503979ec073983191e0e2bcf3addd
-
 
 /* Returns the current thread's DONATED priority. */
 int thread_get_priority(void)
@@ -568,18 +527,15 @@ init_thread(struct thread *t, const char *name, int priority)
   ASSERT(PRI_MIN <= priority && priority <= PRI_MAX);
   ASSERT(name != NULL);
 
-
   memset(t, 0, sizeof *t);
   t->status = THREAD_BLOCKED;
   strlcpy(t->name, name, sizeof t->name);
   t->stack = (uint8_t *)t + PGSIZE;
   t->priority = priority;
   t->initial_priority = priority;
-  t->starting_prio = priority;
   t->magic = THREAD_MAGIC;
   t->parent = running_thread();
   t->next_fd = 2;
-  sema_init(&t->lock_waiting_sema, 1);
   list_init(&t->file_list);
   list_init(&t->child_list);
   list_init(&t->lock_list);
@@ -610,10 +566,8 @@ alloc_frame(struct thread *t, size_t size)
 static struct thread *
 next_thread_to_run(void)
 {
-  //printf("List size: %d\n", list_size(&ready_list));
   if (list_empty(&ready_list))
   {
-    //printf("LIST EMPTY\nNEXT THREAD TO RUN FAIL ln 593\n");
     return idle_thread;
   }
   else
@@ -679,7 +633,7 @@ schedule(void)
 
   ASSERT(intr_get_level() == INTR_OFF);
   ASSERT(cur->status != THREAD_RUNNING);
-  //if (next == NULL) printf("THREAD NULL DUMMY\n");
+  // if (next == NULL) printf("THREAD NULL DUMMY\n");
   ASSERT(is_thread(next));
 
   if (cur != next)
@@ -700,7 +654,6 @@ allocate_tid(void)
 
   return tid;
 }
-
 
 /* Offset of `stack' member within `struct thread'.
    Used by switch.S, which can't figure it out on its own. */
