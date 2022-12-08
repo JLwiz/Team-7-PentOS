@@ -85,8 +85,7 @@ sema_down (struct semaphore *sema)
   old_level = intr_disable ();
   while (sema->value == 0) 
     {
-      //list_insert_ordered(&sema->waiters, &thread_current()->elem, list_less_func_sort_by_priority_synch, NULL);
-      list_push_back(&sema->waiters, &thread_current()->elem);
+      list_insert_ordered(&sema->waiters, &thread_current()->elem, list_less_func_sort_by_priority_synch, NULL);
       thread_block ();
     }
   sema->value--;
@@ -131,13 +130,13 @@ sema_up (struct semaphore *sema)
   ASSERT (sema != NULL);
 
   old_level = intr_disable ();
+  sema->value++;
   if (!list_empty (&sema->waiters)) {
     list_sort(&sema->waiters, list_less_func_sort_by_priority_synch, NULL);
     struct thread *next_to_up = list_entry(list_pop_front (&sema->waiters), struct thread, elem);
     //printf("next up: %s\n", next_to_up->name);
     thread_unblock (next_to_up);
   }
-  sema->value++;
   intr_set_level (old_level);
 }
 
@@ -203,7 +202,7 @@ lock_init (struct lock *lock)
   lock->holder = NULL;
   lock->priority = PRI_MIN;
   sema_init (&lock->semaphore, 1);
-  list_init(&lock->waiters);
+  // list_init(&lock->waiters);
 }
 
 /* Acquires LOCK, sleeping until it becomes available if
@@ -222,7 +221,7 @@ lock_acquire (struct lock *lock)
   ASSERT (!lock_held_by_current_thread (lock));
 
   struct thread *current = thread_current ();
-  enum intr_level prev_lvl = intr_disable ();
+  // enum intr_level prev_lvl = intr_disable ();
   if (lock->holder) 
   {
     current->waiting_on = lock;
@@ -242,7 +241,7 @@ lock_acquire (struct lock *lock)
       } 
     }
   }
-  intr_set_level (prev_lvl);
+  // intr_set_level (prev_lvl);
   sema_down (&lock->semaphore);
   lock->holder = thread_current ();
 }
@@ -284,7 +283,7 @@ lock_release (struct lock *lock)
 
   lock->holder = NULL;
   sema_up (&lock->semaphore);
-  enum intr_level prev_lvl = intr_disable ();
+  // enum intr_level prev_lvl = intr_disable ();
   struct thread *current = thread_current ();
   int next_prio = -1;
   struct thread *next;
@@ -320,7 +319,7 @@ lock_release (struct lock *lock)
     thread_set_priority (current->initial_priority);
   }
 
-  intr_set_level (prev_lvl);
+  // intr_set_level (prev_lvl);
 }
 
 /* Returns true if the current thread holds LOCK, false
@@ -393,8 +392,10 @@ cond_wait (struct condition *cond, struct lock *lock)
   ASSERT (lock != NULL);
   ASSERT (!intr_context ());
   ASSERT (lock_held_by_current_thread (lock));
-  waiter.semaphore.prio = thread_current()->priority;
+
+
   sema_init (&waiter.semaphore, 0);
+  waiter.semaphore.prio = thread_current()->priority;
   list_insert_ordered(&cond->waiters, &waiter.elem, list_less_func_sort_by_priority_sema, NULL);
   lock_release (lock);
   sema_down (&waiter.semaphore);

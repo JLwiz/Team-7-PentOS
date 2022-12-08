@@ -226,13 +226,14 @@ tid_t thread_create(const char *name, int priority,
   child->waited_once = false;
   child->loaded = false;
   sema_init(&child->child_sem, 0);
-  sema_init(&child->child_sem, 1);
-  list_push_back(&thread_current()->child_list, &child->elem);
+  // sema_init(&child->child_sem, 1);
+  // list_push_back(&thread_current()->child_list, &child->elem);
   t->been_waited_on = false;
   /* Add to run queue. */
-  list_insert_ordered(&ready_list, &t->elem, list_less_func_sort_by_priority, NULL);
-  thread_yield();
-  // thread_unblock(t);
+  // list_insert_ordered(&ready_list, &t->elem, list_less_func_sort_by_priority, NULL);
+  // thread_yield();
+  thread_unblock(t);
+
   // schedule();
   return tid;
 }
@@ -269,6 +270,10 @@ void thread_unblock(struct thread *t)
   ASSERT(t->status == THREAD_BLOCKED);
   list_insert_ordered(&ready_list, &t->elem, list_less_func_sort_by_priority, NULL);
   t->status = THREAD_READY;
+
+  if (thread_current()->priority < t->priority) {
+    thread_yield();
+  }
 
   intr_set_level(old_level);
 }
@@ -633,7 +638,6 @@ schedule(void)
 
   ASSERT(intr_get_level() == INTR_OFF);
   ASSERT(cur->status != THREAD_RUNNING);
-  // if (next == NULL) printf("THREAD NULL DUMMY\n");
   ASSERT(is_thread(next));
 
   if (cur != next)
