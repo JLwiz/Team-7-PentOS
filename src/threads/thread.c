@@ -665,5 +665,5 @@ bool list_less_func_sort_by_priority(const struct list_elem *a,
 {
   struct thread *a_prio = list_entry(a, struct thread, elem);
   struct thread *b_prio = list_entry(b, struct thread, elem);
-  return a_prio->priority >= b_prio->priority;
+  return a_prio->priority > b_prio->priority;
 }
